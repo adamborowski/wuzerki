@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="wzr_vis">
+</Property><Property Name="Solution File" Value="C:\Studenci\Rzymski\Wzr-1\wzr13z_1b\wzr_vis.sln">
+</Property><Property Name="Date" Value="24 lutego 2014">
+</Property><Property Name="Time" Value="12:38">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="wzr_vis.sln" Description="File successfully backed up as C:\Studenci\Rzymski\Wzr-1\wzr13z_1b\wzr_vis.sln.old">
+</Event><Event ErrorLevel="0" Project="wzr_vis" Source="wzr_vis.vcproj" Description="Converting project file 'C:\Studenci\Rzymski\Wzr-1\wzr13z_1b\wzr_vis.vcproj'.">
+</Event><Event ErrorLevel="1" Project="wzr_vis" Source="wzr_vis.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="1" Project="wzr_vis" Source="wzr_vis.vcproj" Description="Attribute 'Detect64BitPortabilityProblems' of 'VCCLCompilerTool' is not supported in this version and has been removed during conversion.">
+</Event><Event ErrorLevel="1" Project="wzr_vis" Source="wzr_vis.vcproj" Description="Attribute 'Detect64BitPortabilityProblems' of 'VCCLCompilerTool' is not supported in this version and has been removed during conversion.">
+</Event><Event ErrorLevel="1" Project="wzr_vis" Source="wzr_vis.vcproj" Description="MSB8012: $(TargetName) ('wzr_vis') does not match the Linker's OutputFile property value 'Release\GK-OpenGL.exe' ('GK-OpenGL') in project configuration 'Release|Win32'. This may cause your project to build incorrectly. To correct this, please make sure that $(TargetName) property value matches the value specified in %(Link.OutputFile).">
+</Event><Event ErrorLevel="1" Project="wzr_vis" Source="wzr_vis.vcproj" Description="MSB8012: $(TargetPath) ('C:\Studenci\Rzymski\Wzr-1\wzr13z_1b\Release\wzr_vis.exe') does not match the Linker's OutputFile property value 'Release\GK-OpenGL.exe' ('C:\Studenci\Rzymski\Wzr-1\wzr13z_1b\Release\GK-OpenGL.exe') in project configuration 'Release|Win32'. This may cause your project to build incorrectly. To correct this, please make sure that $(TargetPath) property value matches the value specified in %(Link.OutputFile).">
+</Event><Event ErrorLevel="0" Project="wzr_vis" Source="wzr_vis.vcproj" Description="Done converting to new project file 'C:\Studenci\Rzymski\Wzr-1\wzr13z_1b\wzr_vis.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="wzr_vis" Source="wzr_vis.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="wzr_vis.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="wzr_vis.sln" Description="Converted">
+</Event></UpgradeLog>
