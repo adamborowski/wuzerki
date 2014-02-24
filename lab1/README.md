@@ -1,3 +1,3 @@
 Zadanie pierwsze: multicast->klient server
-Folder bez srv - od Rzymka
-Folder z srv - server
+\r\nFolder bez srv - od Rzymka
+\r\nFolder z srv - server
