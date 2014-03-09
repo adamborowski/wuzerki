@@ -3,8 +3,9 @@
     Wysy³anie, odbiór komunikatów, interakcja z innymi
     uczestnikami WZR, sterowanie wirtualnymi obiektami  
 *************************************************************/
-#define SERVER_IP "192.168.1.118"
-#define RECV_PORT 10000
+#define SERVER_IP "192.168.56.103"
+#define RECV_PORT 10002
+#define SEND_PORT 10001
 
 unsigned long last_sent_ip;
 
@@ -71,7 +72,7 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 
 		//fprintf(f,"odebrano stan iID = %d, ID dla mojego obiektu = %d\n",stan.iID,pMojObiekt->iID);
 
-		if (stan.iID != pMojObiekt->iID)          // jeœli to nie mój w³asny obiekt
+		if (stan.iID != pMojObiekt->iID && stan.iID >= 0)          // jeœli to nie mój w³asny obiekt
 		{
 		  if (IndeksyObiektow[stan.iID] == -1)        // nie ma jeszcze takiego obiektu w tablicy -> trzeba go
 												// stworzyæ
@@ -108,7 +109,7 @@ void PoczatekInterakcji()
 
    // obiekty sieciowe typu unicast (z podaniem adresu IP wirtualnej grupy oraz numeru portu)
    multi_reciv = new unicast_net(RECV_PORT);      // obiekt do odbioru ramek sieciowych
-   multi_send = new unicast_net(RECV_PORT);       // obiekt do wysy³ania ramek
+   multi_send = new unicast_net(SEND_PORT);       // obiekt do wysy³ania ramek
 
 
    // uruchomienie watku obslugujacego odbior komunikatow
