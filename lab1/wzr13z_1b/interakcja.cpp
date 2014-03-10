@@ -1,4 +1,4 @@
-#define AUTOPILOT // jeœli autopilot
+//#define AUTOPILOT // jeœli autopilot
 
 /************************************************************
 Interakcja:
