@@ -1,11 +1,14 @@
+#define AUTOPILOT // jeœli autopilot
+
 /************************************************************
-    Interakcja:
-    Wysy³anie, odbiór komunikatów, interakcja z innymi
-    uczestnikami WZR, sterowanie wirtualnymi obiektami  
+Interakcja:
+Wysy³anie, odbiór komunikatów, interakcja z innymi
+uczestnikami WZR, sterowanie wirtualnymi obiektami  
 *************************************************************/
-#define SERVER_IP "192.168.56.103"
+#define SERVER_IP "192.168.1.118"
 #define RECV_PORT 10002
 #define SEND_PORT 10001
+
 
 unsigned long last_sent_ip;
 
@@ -14,10 +17,70 @@ unsigned long last_sent_ip;
 #include <stdio.h>   
 #include "interakcja.h"
 #include "obiekty.h"
-
+#include <random>
 #include "siec.h"
 
 FILE *f = fopen("plik.txt","w");    // plik do zapisu informacji testowych
+
+const int statusDuration=400;
+
+enum Status{FORWARD, TURN_RIGT, TURN_LEFT};
+class Autopilot{
+public:
+	Autopilot(ObiektRuchomy&object):
+		  gen(rand()),
+		  dis(0,3),
+		  status(FORWARD),
+		  timeStatusLeft(statusDuration),
+		  object(object)
+	{
+		
+	}
+	void nextFrame(){
+		timeStatusLeft--;
+		if(timeStatusLeft==0)
+		{
+			changeStatus();
+		}
+		processFrame();
+	}
+	void processFrame(){
+		switch(status)
+		{
+		case FORWARD:
+			object.F = 6.0;
+			break;
+		case TURN_RIGT:
+			object.alfa = +PI*15/180;
+			break;
+		case TURN_LEFT:
+			object.alfa = -PI*15/180;
+			break;
+		}
+	}
+	void changeStatus(){
+		status=static_cast<Status> (dis(rand));
+		timeStatusLeft=statusDuration;
+	}
+	ObiektRuchomy &object;
+private:
+	Status status;
+	int timeStatusLeft;
+	std::random_device rand;
+	std::mt19937 gen;
+	std::uniform_int_distribution<> dis;
+	
+};
+
+Autopilot *autopilot;
+
+
+
+
+
+
+
+
 
 
 ObiektRuchomy *pMojObiekt;          // obiekt przypisany do tej aplikacji
@@ -49,9 +112,9 @@ int opoznienia = 0;
 
 struct Ramka
 {
-   StanObiektu stan;
-   int typ;
-   long czas_wyslania;
+	StanObiektu stan;
+	int typ;
+	long czas_wyslania;
 };
 
 
@@ -59,10 +122,10 @@ struct Ramka
 // Funkcja obs³ugi w¹tku odbioru komunikatów 
 DWORD WINAPI WatekOdbioru(void *ptr)
 {
-  unicast_net *pmt_net=(unicast_net*)ptr;  // wskaŸnik do obiektu klasy unicast_net
-  int rozmiar;                             // liczba bajtów ramki otrzymanej z sieci
-  Ramka ramka;
-  StanObiektu stan;
+	unicast_net *pmt_net=(unicast_net*)ptr;  // wskaŸnik do obiektu klasy unicast_net
+	int rozmiar;                             // liczba bajtów ramki otrzymanej z sieci
+	Ramka ramka;
+	StanObiektu stan;
 
 	while(1)
 	{
@@ -74,18 +137,18 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 
 		if (stan.iID != pMojObiekt->iID && stan.iID >= 0)          // jeœli to nie mój w³asny obiekt
 		{
-		  if (IndeksyObiektow[stan.iID] == -1)        // nie ma jeszcze takiego obiektu w tablicy -> trzeba go
-												// stworzyæ
-		  {
-			InneObiekty[iLiczbaInnychOb] = new ObiektRuchomy();   
-			IndeksyObiektow[stan.iID] = iLiczbaInnychOb;     // wpis do tablicy indeksowanej numerami ID
-													   // u³atwia wyszukiwanie, alternatyw¹ mo¿e byæ tabl. rozproszona           
-			fprintf(f,"zarejestrowano %d obcy obiekt o ID = %d\n",iLiczbaInnychOb-1,InneObiekty[iLiczbaInnychOb]->iID);                                           
-                                                   
-			iLiczbaInnychOb++;     
+			if (IndeksyObiektow[stan.iID] == -1)        // nie ma jeszcze takiego obiektu w tablicy -> trzeba go
+				// stworzyæ
+			{
+				InneObiekty[iLiczbaInnychOb] = new ObiektRuchomy();   
+				IndeksyObiektow[stan.iID] = iLiczbaInnychOb;     // wpis do tablicy indeksowanej numerami ID
+				// u³atwia wyszukiwanie, alternatyw¹ mo¿e byæ tabl. rozproszona           
+				fprintf(f,"zarejestrowano %d obcy obiekt o ID = %d\n",iLiczbaInnychOb-1,InneObiekty[iLiczbaInnychOb]->iID);                                           
 
-		  }                                                                     
-		  InneObiekty[IndeksyObiektow[stan.iID]]->ZmienStan(stan);   // aktualizacja stanu obiektu obcego 			
+				iLiczbaInnychOb++;     
+
+			}                                                                     
+			InneObiekty[IndeksyObiektow[stan.iID]]->ZmienStan(stan);   // aktualizacja stanu obiektu obcego 			
 		}
 	}  // koniec while(1)
 	return 1;
@@ -97,42 +160,43 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 // ****    poza grafik¹   
 void PoczatekInterakcji()
 {
-   DWORD dwThreadId;
-   		  
-   pMojObiekt = new ObiektRuchomy();    // tworzenie wlasnego obiektu
+	DWORD dwThreadId;
 
-   for (long i=0;i<2000;i++)            // inicjacja indeksow obcych obiektow
-     IndeksyObiektow[i] = -1;
-   
-   czas_cyklu_WS = clock();             // pomiar aktualnego czasu
-   licznik_sym = 1;
+	pMojObiekt = new ObiektRuchomy();    // tworzenie wlasnego obiektu
+	autopilot= new Autopilot(*pMojObiekt);
+	
+	for (long i=0;i<2000;i++)            // inicjacja indeksow obcych obiektow
+		IndeksyObiektow[i] = -1;
 
-   // obiekty sieciowe typu unicast (z podaniem adresu IP wirtualnej grupy oraz numeru portu)
-   multi_reciv = new unicast_net(RECV_PORT);      // obiekt do odbioru ramek sieciowych
-   multi_send = new unicast_net(SEND_PORT);       // obiekt do wysy³ania ramek
+	czas_cyklu_WS = clock();             // pomiar aktualnego czasu
+	licznik_sym = 1;
+
+	// obiekty sieciowe typu unicast (z podaniem adresu IP wirtualnej grupy oraz numeru portu)
+	multi_reciv = new unicast_net(RECV_PORT);      // obiekt do odbioru ramek sieciowych
+	multi_send = new unicast_net(SEND_PORT);       // obiekt do wysy³ania ramek
 
 
-   // uruchomienie watku obslugujacego odbior komunikatow
-   threadReciv = CreateThread(
-          NULL,                        // no security attributes
-          0,                           // use default stack size
-          WatekOdbioru,                // thread function
-          (void *)multi_reciv,               // argument to thread function
-          0,                           // use default creation flags
-          &dwThreadId);                // returns the thread identifier         
+	// uruchomienie watku obslugujacego odbior komunikatow
+	threadReciv = CreateThread(
+		NULL,                        // no security attributes
+		0,                           // use default stack size
+		WatekOdbioru,                // thread function
+		(void *)multi_reciv,               // argument to thread function
+		0,                           // use default creation flags
+		&dwThreadId);                // returns the thread identifier         
 }
 
-                                      
+
 // *****************************************************************
 // ****    Wszystko co trzeba zrobiæ w ka¿dym cyklu dzia³ania 
 // ****    aplikacji poza grafik¹ 
 void Cykl_WS()
 {
-   licznik_sym++;  
+	licznik_sym++;  
 
-   // Wyznaczanie œredniego czasu (fDt) pomiêdzy dwoma kolejnymi symulacjami
-   if (licznik_sym % 50 == 0)          // jeœli licznik cykli przekroczy³ pewn¹ wartoœæ, to
-   {                                   // nale¿y na nowo obliczyæ œredni czas cyklu fDt
+	// Wyznaczanie œredniego czasu (fDt) pomiêdzy dwoma kolejnymi symulacjami
+	if (licznik_sym % 50 == 0)          // jeœli licznik cykli przekroczy³ pewn¹ wartoœæ, to
+	{                                   // nale¿y na nowo obliczyæ œredni czas cyklu fDt
 		char text[200];
 		long czas_pop = czas_cyklu_WS;
 		czas_cyklu_WS = clock();
@@ -141,15 +205,15 @@ void Cykl_WS()
 
 		sprintf(text," %0.0f fps  %0.2fms  œr.czêstoœæ = %0.2f[r/s]",fFps,1000.0/fFps,sr_czestosc);
 		SetWindowText(okno,text); // wyœwietlenie aktualnej iloœci klatek/s w pasku okna			
-   }   
-		
-   pMojObiekt->Symulacja(fDt);                    // symulacja w³asnego obiektu
+	}   
 
-   Ramka ramka;
-   ramka.stan = pMojObiekt->Stan();               // stan w³asnego obiektu 
-   
-   // wyslanie komunikatu o stanie obiektu przypisanego do aplikacji (pMojObiekt):  
-   int iRozmiar = multi_send->send((char*)&ramka, SERVER_IP, sizeof(Ramka));          
+	pMojObiekt->Symulacja(fDt);                    // symulacja w³asnego obiektu
+
+	Ramka ramka;
+	ramka.stan = pMojObiekt->Stan();               // stan w³asnego obiektu 
+
+	// wyslanie komunikatu o stanie obiektu przypisanego do aplikacji (pMojObiekt):  
+	int iRozmiar = multi_send->send((char*)&ramka, SERVER_IP, sizeof(Ramka));          
 }
 
 // *****************************************************************
@@ -162,98 +226,103 @@ void ZakonczenieInterakcji()
 }
 
 
+
+
 // ************************************************************************
 // ****     Obs³uga klawiszy s³u¿¹cych do sterowania obiektami lub
 // ****     widokami 
 void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 {
-	
-  switch (kod_meldunku) 
+#ifdef AUTOPILOT
+	if (autopilot!=NULL)
+	autopilot->nextFrame();
+#endif
+	switch (kod_meldunku) 
 	{
-	
-	  case WM_LBUTTONDOWN: //reakcja na lewy przycisk myszki
+
+	case WM_LBUTTONDOWN: //reakcja na lewy przycisk myszki
 		{
 			int x = LOWORD(lParam);
 			int y = HIWORD(lParam);
-		
+
 			break;
 		}
-    case WM_KEYDOWN:
+	case WM_KEYDOWN:
 		{
 
 			switch (LOWORD(wParam))
 			{
-        case VK_SHIFT:
-        {
-            SHIFTwcisniety = 1; 
-            break; 
-        }        
-				case VK_SPACE:
+			case VK_SHIFT:
+				{
+					SHIFTwcisniety = 1; 
+					break; 
+				}        
+			case VK_SPACE:
 				{
 					pMojObiekt->ham = 1.0;       // stopieñ hamowania (reszta zale¿y od si³y docisku i wsp. tarcia)
 					break;                       // 1.0 to maksymalny stopieñ (np. zablokowanie kó³)
 				}
-				case VK_UP:
+			case VK_UP:
 				{
-					
+
 					pMojObiekt->F = 6.0;        // si³a pchaj¹ca do przodu
 					break;
 				}
-				case VK_DOWN:
+			case VK_DOWN:
 				{
 					pMojObiekt->F = -2.0;
 					break;
 				}
-				case VK_LEFT:
+			case VK_LEFT:
 				{
 					if (SHIFTwcisniety) pMojObiekt->alfa = PI*35/180;
 					else pMojObiekt->alfa = PI*15/180;
 
 					break;
 				}
-				case VK_RIGHT:
+			case VK_RIGHT:
 				{
 					if (SHIFTwcisniety) pMojObiekt->alfa = -PI*35/180;
 					else pMojObiekt->alfa = -PI*15/180;
 					break;
 				}
-				case 'W':   // oddalenie widoku
-        {
-            //pol_kamery = pol_kamery - kierunek_kamery*0.3;
-            if (oddalenie > 0.5) oddalenie /= 1.3;
-            else oddalenie = 0;  
-            break; 
-        }     
-        case 'S':   // przybli¿enie widoku
-        {
-            //pol_kamery = pol_kamery + kierunek_kamery*0.3; 
-            if (oddalenie > 0) oddalenie *= 1.3;
-            else oddalenie = 0.5;   
-            break; 
-        }    
-				case 'Q':   // widok z góry
+			case 'W':   // oddalenie widoku
+				{
+					//pol_kamery = pol_kamery - kierunek_kamery*0.3;
+					if (oddalenie > 0.5) oddalenie /= 1.3;
+					else oddalenie = 0;  
+					break; 
+				}     
+			case 'S':   // przybli¿enie widoku
+				{
+					//pol_kamery = pol_kamery + kierunek_kamery*0.3; 
+					if (oddalenie > 0) oddalenie *= 1.3;
+					else oddalenie = 0.5;   
+					break; 
+				}    
+			case 'Q':   // widok z góry
 				{
 					pol_kamery = Wektor3(0,100,0);
 					kierunek_kamery = Wektor3(0,-1,0.02);
 					pion_kamery = Wektor3(0,0,-1);
 					break;
 				}
-				case 'E':   // obrót kamery ku górze (wzglêdem lokalnej osi z)
-        {
-            kat_kam_z += PI*5/180; 
-            break; 
-        }    
-				case 'D':   // obrót kamery ku do³owi (wzglêdem lokalnej osi z)
+			case 'E':   // obrót kamery ku górze (wzglêdem lokalnej osi z)
 				{
-				  kat_kam_z -= PI*5/180;  
+					kat_kam_z += PI*5/180; 
+					break; 
+				}    
+			case 'D':   // obrót kamery ku do³owi (wzglêdem lokalnej osi z)
+				{
+					kat_kam_z -= PI*5/180;  
 					break;
 				}
-				case 'A':   // w³¹czanie, wy³¹czanie trybu œledzenia obiektu
+			case 'A':   // w³¹czanie, wy³¹czanie trybu œledzenia obiektu
 				{
-          sledzenie = 1 - sledzenie;
+					sledzenie = 1 - sledzenie;
 					break;
 				}
-				case VK_ESCAPE:
+			case VK_ESCAPE:
 				{
 					SendMessage(okno, WM_DESTROY,0,0);
 					break;
@@ -262,38 +331,38 @@ void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 
 			break;
 		}
-    case WM_KEYUP:
+	case WM_KEYUP:
 		{
 			switch (LOWORD(wParam))
 			{
-        case VK_SHIFT:
-        {
-            SHIFTwcisniety = 0; 
-            break; 
-        }        
-				case VK_SPACE:
+			case VK_SHIFT:
+				{
+					SHIFTwcisniety = 0; 
+					break; 
+				}        
+			case VK_SPACE:
 				{
 					pMojObiekt->ham = 0.0;
 					break;
 				}
-				case VK_UP:
+			case VK_UP:
 				{
 					pMojObiekt->F = 0.0;
-					
+
 					break;
 				}
-				case VK_DOWN:
+			case VK_DOWN:
 				{
 					pMojObiekt->F = 0.0;
 					break;
 				}
-				case VK_LEFT:
+			case VK_LEFT:
 				{
 					pMojObiekt->Fb = 0.00;
 					pMojObiekt->alfa = 0;	
 					break;
 				}
-				case VK_RIGHT:
+			case VK_RIGHT:
 				{
 					pMojObiekt->Fb = 0.00;
 					pMojObiekt->alfa = 0;	
@@ -304,6 +373,7 @@ void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 
 			break;
 		}
-                   
+
 	} // switch po komunikatach
+
 }
