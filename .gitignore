@@ -16,11 +16,6 @@
 *.manifest
 *.xslt
 *.res
-*.sln
 *.suo
-*.suo
-*.sln
-*.vcxproj
 *.filters
 *.user
-*.sln
