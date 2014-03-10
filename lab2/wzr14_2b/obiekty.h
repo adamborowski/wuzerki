@@ -5,11 +5,11 @@
 
 struct StanObiektu
 {
-  int iID;                  // identyfikator obiektu
+	int iID;                  // identyfikator obiektu
 	Wektor3 wPol;             // polozenie obiektu (œrodka geometrycznego obiektu) 
 	kwaternion qOrient;       // orientacja (polozenie katowe)
 	Wektor3 wV,wA;            // predkosc, przyspiesznie liniowe
-  Wektor3 wV_kat, wA_kat;   // predkosc i przyspieszenie liniowe
+	Wektor3 wV_kat, wA_kat;   // predkosc i przyspieszenie k¹towe
 };
 
 // Klasa opisuj¹ca obiekty ruchome
@@ -20,7 +20,7 @@ public:
 	Wektor3 wPol;             // polozenie obiektu
 	kwaternion qOrient;       // orientacja (polozenie katowe) 
 	Wektor3 wV,wA;            // predkosc, przyspiesznie liniowe
-  Wektor3 wV_kat, wA_kat;   // predkosc i przyspeszenie liniowe
+	Wektor3 wV_kat, wA_kat;   // predkosc i przyspeszenie liniowe
 
 	float F,Fb;               // si³y dzia³aj¹ce na obiekt: F - pchajaca do przodu, Fb - w prawo
 	float ham;                // stopieñ hamowania Fh_max = tarcie*Fy*ham
@@ -37,8 +37,8 @@ public:
 	~ObiektRuchomy();
 	void ZmienStan(StanObiektu stan);          // zmiana stanu obiektu
 	StanObiektu Stan();        // metoda zwracajaca stan obiektu
-    void Symulacja(float dt);  // symulacja ruchu obiektu w oparciu o biezacy stan, przylozone sily
-	                           // oraz czas dzialania sil. Efektem symulacji jest nowy stan obiektu 
+	void Symulacja(float dt);  // symulacja ruchu obiektu w oparciu o biezacy stan, przylozone sily
+	// oraz czas dzialania sil. Efektem symulacji jest nowy stan obiektu 
 	void Rysuj();			   // odrysowanie obiektu					
 };
 
@@ -46,14 +46,14 @@ public:
 class Teren
 {
 public:
-    float **mapa;          // wysokoœci naro¿ników oraz œrodków pól
-    float ***d;            // wartoœci wyrazu wolnego z równania p³aszczyzny dla ka¿dego trójk¹ta
-    Wektor3 ***Norm;       // normalne do p³aszczyzn trójk¹tów
-    float rozmiar_pola;    // dlugosc boku kwadratowego pola na mapie
-    long lwierszy,lkolumn; // liczba wierszy i kolumn mapy (kwadratów na wysokoœæ i szerokoœæ)     
-    Teren();    
-    ~Teren();   
-    float Wysokosc(float x,float z);      // okreœlanie wysokoœci dla punktu o wsp. (x,z) 
-    void Rysuj();	                      // odrysowywanie terenu   
-    void PoczatekGrafiki();               // tworzenie listy wyœwietlania
+	float **mapa;          // wysokoœci naro¿ników oraz œrodków pól
+	float ***d;            // wartoœci wyrazu wolnego z równania p³aszczyzny dla ka¿dego trójk¹ta
+	Wektor3 ***Norm;       // normalne do p³aszczyzn trójk¹tów
+	float rozmiar_pola;    // dlugosc boku kwadratowego pola na mapie
+	long lwierszy,lkolumn; // liczba wierszy i kolumn mapy (kwadratów na wysokoœæ i szerokoœæ)     
+	Teren();    
+	~Teren();   
+	float Wysokosc(float x,float z);      // okreœlanie wysokoœci dla punktu o wsp. (x,z) 
+	void Rysuj();	                      // odrysowywanie terenu   
+	void PoczatekGrafiki();               // tworzenie listy wyœwietlania
 };

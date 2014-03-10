@@ -4,8 +4,8 @@ Wysy³anie, odbiór komunikatów, interakcja z innymi
 uczestnikami WZR, sterowanie wirtualnymi obiektami  
 *************************************************************/
 
-bool czy_opoznienia = 1;            // symulacja opóŸnieñ w sieci 
-bool czy_zmn_czestosc = 0;          // symulacja ograniczonej czêstoœci (przepustowoœci) wysy³ania ramek  
+bool czy_opoznienia = 0;            // symulacja opóŸnieñ w sieci 
+bool czy_zmn_czestosc = 1;          // symulacja ograniczonej czêstoœci (przepustowoœci) wysy³ania ramek  
 bool czy_test_pred = 0;             // testowanie algorytmu predykcji bez udzia³u cz³owieka
 
 #include <windows.h>
@@ -220,12 +220,11 @@ void Cykl_WS()
   // ------------  Miejsce na predykcjê stanu:
   for (int k=0;k<iLiczbaCudzychOb;k++)
   {
+	  float cos = (CudzeObiekty[k]->wA.x * CudzeObiekty[k]->wV.x + CudzeObiekty[k]->wA.y * CudzeObiekty[k]->wV.y + CudzeObiekty[k]->wA.z * CudzeObiekty[k]->wV.z) / (CudzeObiekty[k]->wV.dlugosc() * CudzeObiekty[k]->wA.dlugosc());
+	  //float a = CudzeObiekty[k]->wA * cos;
 
-
-
-
-
-
+	  CudzeObiekty[k]->wPol += CudzeObiekty[k]->wV * fDt + CudzeObiekty[k]->wA * cos * fDt * fDt * 0.5;
+	  CudzeObiekty[k]->wV += CudzeObiekty[k]->wA * fDt * cos;
 
   } 
 
