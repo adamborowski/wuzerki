@@ -3,7 +3,7 @@
     Wysy³anie, odbiór komunikatów, interakcja z innymi
     uczestnikami WZR, sterowanie wirtualnymi obiektami  
 *************************************************************/
-#define SERVER_IP "192.168.56.103"
+#define SERVER_IP "192.168.1.118"
 #define RECV_PORT 10002
 #define SEND_PORT 10001
 
@@ -49,9 +49,14 @@ int opoznienia = 0;
 
 struct Ramka
 {
-   StanObiektu stan;
-   int typ;
-   long czas_wyslania;
+    StanObiektu stan;
+    int typ;
+    long czas_wyslania;
+
+    Ramka() {
+		typ = 0;
+		czas_wyslania = 10000; /* @todo: getsystemtime - timestamp */
+	}
 };
 
 
