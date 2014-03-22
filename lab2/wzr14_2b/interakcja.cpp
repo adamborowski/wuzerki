@@ -223,25 +223,25 @@ void Cykl_WS()
 		ObiektRuchomy *obj=CudzeObiekty[k];
 		Wektor3 predkosc=obj->wV;
 		Wektor3 przysp=obj->wA;
+
+
 		
-		float cos = (przysp.x * predkosc.x + przysp.y * predkosc.y + przysp.z *predkosc.z) / (predkosc.dlugosc() *przysp.dlugosc());
-		//float a = CudzeObiekty[k]->wA * cos;
-		Wektor3 translacja= predkosc * fDt + przysp * cos * fDt * fDt * 0.5;
-		//ten wektor trzeba obróciæ zgodnie z ostatnim znamym
+		//kierunek jazdy - wektor jednostkowy
+		Wektor3 kierunekJazdy = obj->qOrient.obroc_wektor(Wektor3(1,0,0));
 
-		kwaternion kwaternionObrotu = AsixToQuat(obj->qOrient.AsixAngle(), obj->alfa); 
-		printf("x=%f, y=%f, z=%f, w=%f, alfa=%f\n",kwaternionObrotu.x, kwaternionObrotu.y, kwaternionObrotu.z, kwaternionObrotu.w, obj->alfa);
+		//projekcja prêdkoœci jazdy na kierunek jazdy
+		Wektor3 vProjection=(predkosc).projectOn(kierunekJazdy);
+		//projekcja przyœpieszenia na kierunek jazdy
+		Wektor3 aProjection=(przysp).projectOn(kierunekJazdy);
+		przysp.log("przysp");
 
-		//translacja=obj->qOrient.obroc_wektor(translacja);
-
-		obj->wPol +=translacja;
-		//obj->wV += CudzeObiekty[k]->wA * fDt * cos;
-
-		// kwaternion to orientacja zielonego ducha. z to oœ pionowa
-		kwaternion kwaternion=obj->qOrient;
-		Wektor3 predkoscKat=obj->wV_kat;
-		//printf("z=%f\n", predkoscKat.y);
-		//printf("x=%f, y=%f, z=%f, w=%f, alfa=%f\n",orientacja.x, orientacja.y, orientacja.z, orientacja.w, obj->alfa);
+		//przemieszczenie w kierunku jazdy
+		Wektor3 translation = vProjection*fDt+aProjection*fDt*fDt*0.5;
+		//aplikuj przemieszczenie
+		obj->wPol +=translation;
+		//modyfikuj prêdkoœæ, bo znamy przyspieszenie
+		obj->wV+=aProjection*fDt;
+		
 
 	} 
 
