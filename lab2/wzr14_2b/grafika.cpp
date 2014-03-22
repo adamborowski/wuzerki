@@ -55,7 +55,7 @@ int InicjujGrafike(HDC g_context)
 void RysujScene()
 {
 	GLfloat BlueSurface[] = { 0.3f, 0.0f, 0.8f, 0.5f};
-	GLfloat DGreenSurface[] = { 0.0f, 0.9f, 0.25f, 0.7f};
+	GLfloat DGreenSurface[] = { 1.0f, 0.9f, 0.25f, 0.7f};
 	GLfloat RedSurface[] = { 0.8f, 0.2f, 0.1f, 0.5f};
 	GLfloat GreenSurface[] = { 0.3f, 0.6f, 0.35f, 1.0f};
 	GLfloat YellowSurface[] = { 0.75f, 0.75f, 0.0f, 1.0f};

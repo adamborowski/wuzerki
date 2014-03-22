@@ -1,8 +1,8 @@
 /****************************************************
-    Wirtualne zespoly robocze - przykladowy projekt w C++
-    Do zadañ dotycz¹cych wspó³pracy, ekstrapolacji i 
-    autonomicznych obiektów
- ****************************************************/
+Wirtualne zespoly robocze - przykladowy projekt w C++
+Do zadañ dotycz¹cych wspó³pracy, ekstrapolacji i 
+autonomicznych obiektów
+****************************************************/
 
 #include <windows.h>
 #include <math.h>
@@ -27,21 +27,30 @@ HDC g_context = NULL;        // uchwyt kontekstu graficznego
 
 //funkcja Main - dla Windows
 int WINAPI WinMain(HINSTANCE hInstance,
-               HINSTANCE hPrevInstance,
-               LPSTR     lpCmdLine,
-               int       nCmdShow)
+				   HINSTANCE hPrevInstance,
+				   LPSTR     lpCmdLine,
+				   int       nCmdShow)
 {
 	MSG meldunek;		  //innymi slowy "komunikat"
 	WNDCLASS nasza_klasa; //klasa g³ównego okna aplikacji
 
 	static char nazwa_klasy[] = "KlasaPodstawowa";
 
+	AllocConsole( ) ;
+	freopen( "CON", "w", stdout ) ;
+
+
+
+
+	printf("HELLO!!! I AM THE CONSOLE!" ) ;
+
+
 	//Definiujemy klase g³ównego okna aplikacji
 	//Okreslamy tu wlasciwosci okna, szczegoly wygladu oraz
 	//adres funkcji przetwarzajacej komunikaty
 	nasza_klasa.style         = CS_HREDRAW | CS_VREDRAW;
 	nasza_klasa.lpfnWndProc   = WndProc; //adres funkcji realizuj¹cej przetwarzanie meldunków 
- 	nasza_klasa.cbClsExtra    = 0 ;
+	nasza_klasa.cbClsExtra    = 0 ;
 	nasza_klasa.cbWndExtra    = 0 ;
 	nasza_klasa.hInstance     = hInstance; //identyfikator procesu przekazany przez MS Windows podczas uruchamiania programu
 	nasza_klasa.hIcon         = 0;
@@ -50,26 +59,26 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	nasza_klasa.lpszMenuName  = "Menu" ;
 	nasza_klasa.lpszClassName = nazwa_klasy;
 
-    //teraz rejestrujemy klasê okna g³ównego
-    RegisterClass (&nasza_klasa);
-	
+	//teraz rejestrujemy klasê okna g³ównego
+	RegisterClass (&nasza_klasa);
+
 	/*tworzymy okno g³ówne
 	okno bêdzie mia³o zmienne rozmiary, listwê z tytu³em, menu systemowym
 	i przyciskami do zwijania do ikony i rozwijania na ca³y ekran, po utworzeniu
 	bêdzie widoczne na ekranie */
- 	okno = CreateWindow(nazwa_klasy, "Wirtualne zespo³y robocze - Ekstrapolacja stanu", WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-						100, 50, 750, 750, NULL, NULL, hInstance, NULL);
-	
-	
+	okno = CreateWindow(nazwa_klasy, "Wirtualne zespo³y robocze - Ekstrapolacja stanu", WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+		500, 50, 1400, 950, NULL, NULL, hInstance, NULL);
+
+
 	ShowWindow (okno, nCmdShow) ;
-    
+
 	//odswiezamy zawartosc okna
 	UpdateWindow (okno) ;
 
 	// G£ÓWNA PÊTLA PROGRAMU
-	
-     /* pobranie komunikatu z kolejki; funkcja GetMessage zwraca FALSE tylko dla
-	 komunikatu wm_Quit; dla wszystkich pozosta³ych komunikatów zwraca wartoœæ TRUE */
+
+	/* pobranie komunikatu z kolejki; funkcja GetMessage zwraca FALSE tylko dla
+	komunikatu wm_Quit; dla wszystkich pozosta³ych komunikatów zwraca wartoœæ TRUE */
 	while(GetMessage(&meldunek, NULL, 0, 0))
 	{
 		TranslateMessage(&meldunek); // wstêpna obróbka komunikatu
@@ -83,19 +92,19 @@ int WINAPI WinMain(HINSTANCE hInstance,
 FUNKCJA OKNA realizujaca przetwarzanie meldunków kierowanych do okna aplikacji*/
 LRESULT CALLBACK WndProc (HWND okno, UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 {
-	    	
-    // PONI¯SZA INSTRUKCJA DEFINIUJE REAKCJE APLIKACJI NA POSZCZEGÓLNE MELDUNKI 
+
+	// PONI¯SZA INSTRUKCJA DEFINIUJE REAKCJE APLIKACJI NA POSZCZEGÓLNE MELDUNKI 
 	KlawiszologiaSterowania(kod_meldunku, wParam, lParam);
 
 	switch (kod_meldunku) 
 	{
 	case WM_CREATE:  //meldunek wysy³any w momencie tworzenia okna
 		{
-			
+
 			g_context = GetDC(okno);
 
 			srand( (unsigned)time( NULL ) );
-            int wynik = InicjujGrafike(g_context);
+			int wynik = InicjujGrafike(g_context);
 			if (wynik == 0)
 			{
 				printf("nie udalo sie otworzyc okna graficznego\n");
@@ -105,32 +114,32 @@ LRESULT CALLBACK WndProc (HWND okno, UINT kod_meldunku, WPARAM wParam, LPARAM lP
 			PoczatekInterakcji();
 
 			SetTimer(okno, 1, 10, NULL);
-						
+
 			return 0;
 		}
-	
-       
+
+
 	case WM_PAINT:
 		{
 			PAINTSTRUCT paint;
 			HDC kontekst;
 			kontekst = BeginPaint(okno, &paint);
-		
+
 			RysujScene();			
 			SwapBuffers(kontekst);
 
 			EndPaint(okno, &paint);
 
-			
+
 
 			return 0;
 		}
 
 	case WM_TIMER:
-         Cykl_WS();
-	     InvalidateRect(okno, NULL, FALSE);
+		Cykl_WS();
+		InvalidateRect(okno, NULL, FALSE);
 
-	    return 0;
+		return 0;
 
 	case WM_SIZE:
 		{
@@ -138,10 +147,10 @@ LRESULT CALLBACK WndProc (HWND okno, UINT kod_meldunku, WPARAM wParam, LPARAM lP
 			int cy = HIWORD(lParam);
 
 			ZmianaRozmiaruOkna(cx,cy);
-			
+
 			return 0;
 		}
-  	
+
 	case WM_DESTROY: //obowi¹zkowa obs³uga meldunku o zamkniêciu okna
 
 		ZakonczenieInterakcji();
@@ -156,11 +165,11 @@ LRESULT CALLBACK WndProc (HWND okno, UINT kod_meldunku, WPARAM wParam, LPARAM lP
 
 		PostQuitMessage (0) ;
 		return 0;
-    
+
 	default: //standardowa obs³uga pozosta³ych meldunków
 		return DefWindowProc(okno, kod_meldunku, wParam, lParam);
 	}
-	
-	
+
+
 }
 
