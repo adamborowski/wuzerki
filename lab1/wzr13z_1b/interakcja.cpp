@@ -219,7 +219,9 @@ void Cykl_WS()
 		float fFps = (50*CLOCKS_PER_SEC)/(float)(czas_cyklu_WS-czas_pop);
 		if (fFps!=0) fDt=1.0/fFps; else fDt=1.0;
 
-		sprintf(text," %0.0f fps  %0.2fms  œr.czêstoœæ = %0.2f[r/s]",fFps,1000.0/fFps,sr_czestosc);
+
+		char *localControl = (isAgentControlled ? "tak" : "nie");
+		sprintf(text," %0.0f fps  %0.2fms  œr.czêstoœæ = %0.2f[r/s], kontrola agenta: %s, lokalny iID agenta: %d",fFps,1000.0/fFps,sr_czestosc, localControl, agent->iID);
 		SetWindowText(okno,text); // wyœwietlenie aktualnej iloœci klatek/s w pasku okna			
 	}
 
