@@ -17,11 +17,11 @@ extern bool sledzenie;
 extern float oddalenie;
 extern float kat_kam_z;
 
-
+extern ObiektRuchomy *agent; //@todo: wyœwietlanie agenta
 extern ObiektRuchomy *pMojObiekt;               // obiekt przypisany do tej aplikacji
 extern int iLiczbaInnychOb;						// liczba innych obiektow
 extern ObiektRuchomy *InneObiekty[2000];        // obiekty z innych aplikacji lub inne obiekty niz pCraft
-extern int IndeksyObiektow[2000];                     // tablica indeksow innych obiektow ulatwiajaca wyszukiwanie
+extern int IndeksyObiektow[2000];               // tablica indeksow innych obiektow ulatwiajaca wyszukiwanie
 extern Teren teren;
 
 int g_GLPixelIndex = 0;
@@ -122,8 +122,11 @@ void RysujScene()
 		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, DGreenSurface);
 		InneObiekty[i]->Rysuj();
 	}
+
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, DGreenSurface);
+	agent->Rysuj();
 		
-  glDisable(GL_BLEND);
+    glDisable(GL_BLEND);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, RedSurface);
 	
 	teren.Rysuj();

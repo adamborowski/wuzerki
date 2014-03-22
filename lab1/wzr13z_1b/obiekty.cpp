@@ -16,7 +16,6 @@
 extern FILE *f;
 extern Teren teren;
 extern int iLiczbaInnychOb;
-extern ObiektRuchomy *InneObiekty[2000]; 
 
 
 ObiektRuchomy::ObiektRuchomy()             // konstruktor                   

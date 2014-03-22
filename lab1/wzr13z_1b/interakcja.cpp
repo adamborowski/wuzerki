@@ -6,7 +6,7 @@ Wysy³anie, odbiór komunikatów, interakcja z innymi
 uczestnikami WZR, sterowanie wirtualnymi obiektami  
 *************************************************************/
 #define SERVER_IP "192.168.1.118"
-#define RECV_PORT 10002
+#define RECV_PORT 10001 // 10002
 #define SEND_PORT 10001
 
 
@@ -58,11 +58,12 @@ public:
 			break;
 		}
 	}
-	void changeStatus(){
+	void changeStatus() {
 		status=static_cast<Status> (dis(rand));
 		timeStatusLeft=statusDuration;
 	}
 	ObiektRuchomy &object;
+
 private:
 	Status status;
 	int timeStatusLeft;
@@ -72,29 +73,26 @@ private:
 	
 };
 
-Autopilot *autopilot;
-
-
-
-
-
-
-
-
-
-
 ObiektRuchomy *pMojObiekt;          // obiekt przypisany do tej aplikacji
+
 Teren teren;
 int iLiczbaInnychOb = 0;
-ObiektRuchomy *InneObiekty[2000];  // obiekty z innych aplikacji lub inne obiekty niz pMojObiekt
-int IndeksyObiektow[2000];                // tablica indeksow innych obiektow ulatwiajaca wyszukiwanie
+ObiektRuchomy *InneObiekty[2000];   // obiekty z innych aplikacji lub inne obiekty niz pMojObiekt
+int IndeksyObiektow[2000];          // tablica indeksow innych obiektow ulatwiajaca wyszukiwanie
+
+// zmienne dotycz¹ce agenta
+Autopilot *autopilot;				// logika sterowania agentem (~AI)
+ObiektRuchomy *agent;				// obiekt agenta
+bool isAgentControlled = false;		// domyœlnie klient nie steruje agentem
+float minDelayTime = 5.0f;			// timeout dla przejêcia kontroli nad agentem
+float delayTime = 0.0f;				// licznik timeout dla przejêcia kontroli nad agentem
 
 float fDt;                          // sredni czas pomiedzy dwoma kolejnymi cyklami symulacji i wyswietlania
 long czas_cyklu_WS,licznik_sym;     // zmienne pomocnicze potrzebne do obliczania fDt
 float sr_czestosc;                  // srednia czestosc wysylania ramek w [ramkach/s]
 
-unicast_net *multi_reciv;         // wsk do obiektu zajmujacego sie odbiorem komunikatow
-unicast_net *multi_send;          //   -||-  wysylaniem komunikatow
+multicast_net *multi_reciv;         // wsk do obiektu zajmujacego sie odbiorem komunikatow
+multicast_net *multi_send;          //   -||-  wysylaniem komunikatow
 
 HANDLE threadReciv;                 // uchwyt w¹tku odbioru komunikatów
 extern HWND okno;                   // uchwyt okna
@@ -127,31 +125,42 @@ struct Ramka
 // Funkcja obs³ugi w¹tku odbioru komunikatów 
 DWORD WINAPI WatekOdbioru(void *ptr)
 {
-	unicast_net *pmt_net=(unicast_net*)ptr;  // wskaŸnik do obiektu klasy unicast_net
-	int rozmiar;                             // liczba bajtów ramki otrzymanej z sieci
+	multicast_net *pmt_net=(multicast_net*)ptr;  // wskaŸnik do obiektu klasy multicast_net
+	int rozmiar;                                 // liczba bajtów ramki otrzymanej z sieci
 	Ramka ramka;
 	StanObiektu stan;
+	int typ;
 
 	while(1)
 	{
-
-		rozmiar = pmt_net->reciv((char*)&ramka,&last_sent_ip, sizeof(StanObiektu));   // oczekiwanie na nadejœcie ramki 
+		rozmiar = pmt_net->reciv((char*)&ramka,sizeof(Ramka));   // oczekiwanie na nadejœcie ramki 
 		stan = ramka.stan;
-
+		typ = ramka.typ;
+		//@todo: ramka.czas zg³oszenia
 		//fprintf(f,"odebrano stan iID = %d, ID dla mojego obiektu = %d\n",stan.iID,pMojObiekt->iID);
 
-		if (stan.iID != pMojObiekt->iID && stan.iID >= 0)          // jeœli to nie mój w³asny obiekt
-		{
-			if (IndeksyObiektow[stan.iID] == -1)        // nie ma jeszcze takiego obiektu w tablicy -> trzeba go
-				// stworzyæ
-			{
+		// odebrano ramkê typu agent
+		if (typ == 2) {
+			if (stan.iID <= agent->iID) {
+				// uznanie ramki agenta jako dozwolonej
+				int localAgentId = agent->iID;
+				agent->ZmienStan(stan);
+				agent->iID = localAgentId;
+
+				isAgentControlled = false;
+				delayTime = 0.0f;
+			} else {
+				// przejêcie kontroli nad klientem jako, ¿e lokalny agent ma mniejsze iID
+				isAgentControlled = true;
+			}
+		} else if (stan.iID != pMojObiekt->iID && stan.iID >= 0) {        // jeœli to nie mój w³asny obiekt
+			if (IndeksyObiektow[stan.iID] == -1) {       // nie ma jeszcze takiego obiektu w tablicy -> trzeba go stworzyæ
 				InneObiekty[iLiczbaInnychOb] = new ObiektRuchomy();   
 				IndeksyObiektow[stan.iID] = iLiczbaInnychOb;     // wpis do tablicy indeksowanej numerami ID
 				// u³atwia wyszukiwanie, alternatyw¹ mo¿e byæ tabl. rozproszona           
 				fprintf(f,"zarejestrowano %d obcy obiekt o ID = %d\n",iLiczbaInnychOb-1,InneObiekty[iLiczbaInnychOb]->iID);                                           
 
-				iLiczbaInnychOb++;     
-
+				iLiczbaInnychOb++;
 			}                                                                     
 			InneObiekty[IndeksyObiektow[stan.iID]]->ZmienStan(stan);   // aktualizacja stanu obiektu obcego 			
 		}
@@ -168,17 +177,19 @@ void PoczatekInterakcji()
 	DWORD dwThreadId;
 
 	pMojObiekt = new ObiektRuchomy();    // tworzenie wlasnego obiektu
-	autopilot= new Autopilot(*pMojObiekt);
+	agent = new ObiektRuchomy();
+
+	autopilot = new Autopilot(*agent);
 	
-	for (long i=0;i<2000;i++)            // inicjacja indeksow obcych obiektow
+	for (long i=0; i<2000; i++)          // inicjacja indeksow obcych obiektow
 		IndeksyObiektow[i] = -1;
 
 	czas_cyklu_WS = clock();             // pomiar aktualnego czasu
 	licznik_sym = 1;
 
 	// obiekty sieciowe typu unicast (z podaniem adresu IP wirtualnej grupy oraz numeru portu)
-	multi_reciv = new unicast_net(RECV_PORT);      // obiekt do odbioru ramek sieciowych
-	multi_send = new unicast_net(SEND_PORT);       // obiekt do wysy³ania ramek
+	multi_reciv = new multicast_net(SERVER_IP, RECV_PORT);      // obiekt do odbioru ramek sieciowych
+	multi_send = new multicast_net(SERVER_IP, SEND_PORT);       // obiekt do wysy³ania ramek
 
 
 	// uruchomienie watku obslugujacego odbior komunikatow
@@ -186,7 +197,7 @@ void PoczatekInterakcji()
 		NULL,                        // no security attributes
 		0,                           // use default stack size
 		WatekOdbioru,                // thread function
-		(void *)multi_reciv,               // argument to thread function
+		(void *)multi_reciv,         // argument to thread function
 		0,                           // use default creation flags
 		&dwThreadId);                // returns the thread identifier         
 }
@@ -210,15 +221,35 @@ void Cykl_WS()
 
 		sprintf(text," %0.0f fps  %0.2fms  œr.czêstoœæ = %0.2f[r/s]",fFps,1000.0/fFps,sr_czestosc);
 		SetWindowText(okno,text); // wyœwietlenie aktualnej iloœci klatek/s w pasku okna			
-	}   
+	}
 
 	pMojObiekt->Symulacja(fDt);                    // symulacja w³asnego obiektu
 
 	Ramka ramka;
 	ramka.stan = pMojObiekt->Stan();               // stan w³asnego obiektu 
+	ramka.typ = 0;
+	//@todo: ramka.czas_wyslania = 
 
 	// wyslanie komunikatu o stanie obiektu przypisanego do aplikacji (pMojObiekt):  
-	int iRozmiar = multi_send->send((char*)&ramka, SERVER_IP, sizeof(Ramka));          
+	int iRozmiar = multi_send->send((char*)&ramka, sizeof(Ramka));
+
+	//@todo: j/w o agencie, lecz tylko wtedy gdy klient ma sterowanie agentem
+	if (isAgentControlled) {
+		agent->Symulacja(fDt);
+
+		ramka.stan = agent->Stan();
+		ramka.typ = 2;
+
+		int iRozmiar = multi_send->send((char*)&ramka, sizeof(Ramka));
+	} else {
+		// zwiêkszanie licznika timeout dla przejêcia kontroli nad agentem
+		delayTime += fDt;
+
+		// czekanie na przekroczenie timeout
+		if (delayTime >= minDelayTime) {
+			isAgentControlled = true;
+		}
+	}
 }
 
 // *****************************************************************
@@ -238,10 +269,10 @@ void ZakonczenieInterakcji()
 // ****     widokami 
 void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 {
-#ifdef AUTOPILOT
-	if (autopilot!=NULL)
-	autopilot->nextFrame();
-#endif
+	if (isAgentControlled) {
+		autopilot->nextFrame();
+	}
+
 	switch (kod_meldunku) 
 	{
 
