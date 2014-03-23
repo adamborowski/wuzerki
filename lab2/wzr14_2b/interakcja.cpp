@@ -7,7 +7,7 @@ uczestnikami WZR, sterowanie wirtualnymi obiektami
 bool czy_opoznienia = 0;            // symulacja opóŸnieñ w sieci 
 bool czy_zmn_czestosc = 1;          // symulacja ograniczonej czêstoœci (przepustowoœci) wysy³ania ramek  
 bool czy_test_pred = 0;             // testowanie algorytmu predykcji bez udzia³u cz³owieka
-
+float poziomWygaszania = 1;
 #include <windows.h>
 #include <time.h>
 #include <stdio.h>   
@@ -220,29 +220,70 @@ void Cykl_WS()
 	// ------------  Miejsce na predykcjê stanu:
 	for (int k=0;k<iLiczbaCudzychOb;k++)
 	{
-		ObiektRuchomy *obj=CudzeObiekty[k];
-		Wektor3 predkosc=obj->wV;
-		Wektor3 przysp=obj->wA;
+		//ObiektRuchomy *obj=CudzeObiekty[k];
+		//Wektor3 predkosc=obj->wV;
+		//Wektor3 przysp=obj->wA;
 
 
-		
-		//kierunek jazdy - wektor jednostkowy
-		Wektor3 kierunekJazdy = obj->qOrient.obroc_wektor(Wektor3(1,0,0));
+		//
+		////kierunek jazdy - wektor jednostkowy
+		//Wektor3 kierunekJazdy = obj->qOrient.obroc_wektor(Wektor3(1,0,0));
+		//Wektor3 normalnaKierunku=obj->qOrient.obroc_wektor(Wektor3(0, 0, 1));
+		////projekcja prêdkoœci jazdy na kierunek jazdy
+		//Wektor3 vProjection=(predkosc).projectOn(kierunekJazdy);
+		////projekcja przyœpieszenia na kierunek jazdy
+		//Wektor3 aProjection=(przysp).projectOn(kierunekJazdy);
+		//
 
-		//projekcja prêdkoœci jazdy na kierunek jazdy
-		Wektor3 vProjection=(predkosc).projectOn(kierunekJazdy);
-		//projekcja przyœpieszenia na kierunek jazdy
-		Wektor3 aProjection=(przysp).projectOn(kierunekJazdy);
-		przysp.log("przysp");
+		//Wektor3 predkoscNormalna=predkosc.projectOn(normalnaKierunku);
+		//predkoscNormalna.log("vNorm");
+		////przemieszczenie w kierunku jazdy
+		//Wektor3 translation = vProjection*fDt+aProjection*fDt*fDt*0.5;
+		////aplikuj przemieszczenie
+		//obj->wPol +=translation;
+		////modyfikuj prêdkoœæ, bo znamy przyspieszenie
+		//obj->wV+=aProjection*fDt;
+		//
 
-		//przemieszczenie w kierunku jazdy
-		Wektor3 translation = vProjection*fDt+aProjection*fDt*fDt*0.5;
-		//aplikuj przemieszczenie
-		obj->wPol +=translation;
-		//modyfikuj prêdkoœæ, bo znamy przyspieszenie
-		obj->wV+=aProjection*fDt;
-		
+		////obj->wV_kat.log("katowa");
 
+
+
+		//Dodanie tych kwaternionów
+      Wektor3 w_obrot = CudzeObiekty[k]->wV_kat*fDt + CudzeObiekty[k]->wA_kat*fDt*fDt/2;    
+        kwaternion q_obrot = AsixToQuat(w_obrot.znorm(),w_obrot.dlugosc());
+        CudzeObiekty[k]->qOrient = q_obrot*CudzeObiekty[k]->qOrient;
+        //Koniec kwaternionów
+
+      //znalezienie kierunkow: przod, gora, prawo
+      Wektor3 przod = CudzeObiekty[k]->qOrient.obroc_wektor(Wektor3(1,0,0));
+      Wektor3 gora = CudzeObiekty[k]->qOrient.obroc_wektor(Wektor3(0,1,0));
+      Wektor3 prawo = CudzeObiekty[k]->qOrient.obroc_wektor(Wektor3(0,0,1));
+
+      //zrzutowanie wektora wV na te skladowe
+      Wektor3 wV_przod = przod*((CudzeObiekty[k]->wV)^przod);
+      Wektor3 wV_gora = gora*((CudzeObiekty[k]->wV)^gora);
+      Wektor3 wV_prawo = prawo*((CudzeObiekty[k]->wV)^prawo);
+
+      //zrzutowanie wektora wA na te skladowe
+      Wektor3 wA_przod = przod*((CudzeObiekty[k]->wA)^przod);
+      Wektor3 wA_gora = gora*((CudzeObiekty[k]->wA)^gora);
+      Wektor3 wA_prawo = prawo*((CudzeObiekty[k]->wA)^prawo);
+
+      //wszystkie skladowe + wygaszanie skladowych gora i prawo (/2)
+      //wV_gora =  wV_gora * poziomWygaszania;
+      //wA_gora =  wA_gora * poziomWygaszania;
+      wV_prawo =  wV_prawo * poziomWygaszania;
+      //wA_prawo =  wA_prawo * poziomWygaszania;
+
+      poziomWygaszania /= 2;
+
+      Wektor3 wV = wV_przod + wV_gora + wV_prawo;
+      Wektor3 wA = wA_przod + wA_gora;
+
+      //
+      CudzeObiekty[k]->wPol += (wV * fDt) + wA* fDt * fDt * 1/2;
+      CudzeObiekty[k]->wV += wA * fDt;
 	} 
 
 }
