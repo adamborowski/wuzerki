@@ -5,7 +5,7 @@ Interakcja:
 Wysy³anie, odbiór komunikatów, interakcja z innymi
 uczestnikami WZR, sterowanie wirtualnymi obiektami  
 *************************************************************/
-#define SERVER_IP "192.168.1.118"
+#define SERVER_IP "192.168.0.255"
 #define RECV_PORT 10001 // 10002
 #define SEND_PORT 10001
 
@@ -141,7 +141,7 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 
 		// odebrano ramkê typu agent
 		if (typ == 2) {
-			if (stan.iID <= agent->iID) {
+			if (stan.iID < agent->iID) {
 				// uznanie ramki agenta jako dozwolonej
 				int localAgentId = agent->iID;
 				agent->ZmienStan(stan);
