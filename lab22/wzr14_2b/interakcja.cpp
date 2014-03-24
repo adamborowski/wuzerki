@@ -17,6 +17,7 @@ float poziomWygaszania = 1;
 
 FILE *f = fopen("wzr_plik.txt","w");    // plik do zapisu informacji testowych
 int czestsze_ramki = 0;
+int maks_czestsze_ramki = 20; // ~0.33s
 
 ObiektRuchomy *pMojObiekt;          // obiekt przypisany do tej aplikacji
 Teren teren;
@@ -217,7 +218,7 @@ void Cykl_WS()
 		czas_okna=0;
 		licznik_ramek=0;
 	}
-	if ((czestsze_ramki > 30 && licznik_ramek<maks_liczba_ramek) || licznik_sym % 120 == 0) //(licznik_sym % 100 == 0) || !czy_zmn_czestosc)
+	if ((czestsze_ramki > maks_czestsze_ramki || licznik_sym % 100 == 0) && licznik_ramek < maks_liczba_ramek)
 	{
 		int iRozmiar = multi_send->send((char*)&ramka,sizeof(Ramka));
 		licznik_ramek++;
