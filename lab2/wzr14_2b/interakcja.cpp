@@ -87,7 +87,7 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 		//fprintf(f,"odebrano stan iID = %d, ID dla mojego obiektu = %d\n",stan.iID,pMojObiekt->iID);
 
 		//if (stan.iID != pMojObiekt->iID)          // jeœli to nie mój w³asny obiekt
-		{
+		if(stan.iID>=0 ){
 			if (IndeksyOb[stan.iID] == -1)        // nie ma jeszcze takiego obiektu w tablicy -> trzeba go
 				// stworzyæ
 			{

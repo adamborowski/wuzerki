@@ -5,7 +5,7 @@ Interakcja:
 Wysy³anie, odbiór komunikatów, interakcja z innymi
 uczestnikami WZR, sterowanie wirtualnymi obiektami  
 *************************************************************/
-#define SERVER_IP "192.168.0.255"
+#define SERVER_IP "192.168.1.255"
 #define RECV_PORT 10001 // 10002
 #define SEND_PORT 10001
 
