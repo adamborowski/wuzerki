@@ -5,7 +5,7 @@ Interakcja:
 Wysy³anie, odbiór komunikatów, interakcja z innymi
 uczestnikami WZR, sterowanie wirtualnymi obiektami  
 *************************************************************/
-#define SERVER_IP "192.168.0.255"
+#define SERVER_IP "192.168.1.255"
 #define RECV_PORT 10001 // 10002
 #define SEND_PORT 10001
 
@@ -151,6 +151,10 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 				delayTime = 0.0f;
 			} else {
 				// przejêcie kontroli nad klientem jako, ¿e lokalny agent ma mniejsze iID
+				int localAgentId = agent->iID;
+				agent->ZmienStan(stan);
+				agent->iID = localAgentId;
+
 				isAgentControlled = true;
 			}
 		} else if (stan.iID != pMojObiekt->iID && stan.iID >= 0) {        // jeœli to nie mój w³asny obiekt
