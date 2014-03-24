@@ -1,0 +1,4 @@
+mapa terenu: lwierszy = 40, lkolumn = 40
+MojObiekt->iID = 94
+MojObiekt->iID = 41
+Koniec interakcji
