@@ -6,7 +6,13 @@ uczestnikami WZR, sterowanie wirtualnymi obiektami
 
 bool czy_opoznienia = 0;            // symulacja opóŸnieñ w sieci 
 bool czy_zmn_czestosc = 1;          // symulacja ograniczonej czêstoœci (przepustowoœci) wysy³ania ramek  
-bool czy_test_pred = 1;             // testowanie algorytmu predykcji bez udzia³u cz³owieka
+bool czy_test_pred = 0;             // testowanie algorytmu predykcji bez udzia³u cz³owieka
+
+bool czy_gora = 0;
+bool czy_dol = 0;
+bool czy_lewo=0;
+bool czy_prawo = 0;
+
 float poziomWygaszania = 1;
 #include <windows.h>
 #include <time.h>
@@ -386,29 +392,48 @@ void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 				}
 			case VK_UP:
 				{
+					czy_gora=1;
+					if(czy_dol)
+						czestsze_ramki+=maks_czestsze_ramki;
 					czestsze_ramki++;
 					pMojObiekt->F = 30.0;        // si³a pchaj¹ca do przodu
+
+					czy_dol=0;					
 					break;
 				}
 			case VK_DOWN:
 				{
+					czy_dol=1;
+					if(czy_gora)
+						czestsze_ramki+=maks_czestsze_ramki;
 					czestsze_ramki++;
 					pMojObiekt->F = -5.0;
+
+					czy_gora=0;
 					break;
 				}
 			case VK_LEFT:
 				{
+					czy_lewo=1;
+					if(czy_prawo)
+						czestsze_ramki+=maks_czestsze_ramki;
 					czestsze_ramki++;
 					if (SHIFTwcisniety) pMojObiekt->alfa = PI*25/180;
 					else pMojObiekt->alfa = PI*10/180;
 
+					czy_prawo=0;
 					break;
 				}
 			case VK_RIGHT:
 				{
+					czy_prawo=1;
+					if(czy_lewo)
+						czestsze_ramki+=maks_czestsze_ramki;
 					czestsze_ramki++;
 					if (SHIFTwcisniety) pMojObiekt->alfa = -PI*25/180;
 					else pMojObiekt->alfa = -PI*10/180;
+
+					czy_lewo=0;
 					break;
 				}
 			case 'I':   // wypisywanie nr ID
@@ -526,23 +551,27 @@ void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 				}
 			case VK_UP:
 				{
+					czestsze_ramki+=maks_czestsze_ramki;
 					pMojObiekt->F = 0.0;
-
+					printf("UP \n");
 					break;
 				}
 			case VK_DOWN:
 				{
+					czestsze_ramki+=maks_czestsze_ramki;
 					pMojObiekt->F = 0.0;
 					break;
 				}
 			case VK_LEFT:
 				{
+					czestsze_ramki+=maks_czestsze_ramki;
 					pMojObiekt->Fb = 0.00;
 					pMojObiekt->alfa = 0;	
 					break;
 				}
 			case VK_RIGHT:
 				{
+					czestsze_ramki+=maks_czestsze_ramki;
 					pMojObiekt->Fb = 0.00;
 					pMojObiekt->alfa = 0;	
 					break;
