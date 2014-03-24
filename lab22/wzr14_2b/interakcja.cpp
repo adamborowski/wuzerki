@@ -6,7 +6,13 @@ uczestnikami WZR, sterowanie wirtualnymi obiektami
 
 bool czy_opoznienia = 0;            // symulacja opóŸnieñ w sieci 
 bool czy_zmn_czestosc = 1;          // symulacja ograniczonej czêstoœci (przepustowoœci) wysy³ania ramek  
-bool czy_test_pred = 1;             // testowanie algorytmu predykcji bez udzia³u cz³owieka
+bool czy_test_pred = 0;             // testowanie algorytmu predykcji bez udzia³u cz³owieka
+
+bool czy_gora = 0;
+bool czy_dol = 0;
+bool czy_lewo=0;
+bool czy_prawo = 0;
+
 float poziomWygaszania = 1;
 #include <windows.h>
 #include <time.h>
@@ -16,7 +22,8 @@ float poziomWygaszania = 1;
 #include "siec.h"
 
 FILE *f = fopen("wzr_plik.txt","w");    // plik do zapisu informacji testowych
-bool czestsze_ramki = 0;
+int czestsze_ramki = 0;
+int maks_czestsze_ramki = 20; // ~0.33s
 
 ObiektRuchomy *pMojObiekt;          // obiekt przypisany do tej aplikacji
 Teren teren;
@@ -25,7 +32,10 @@ ObiektRuchomy *CudzeObiekty[1000];  // obiekty z innych aplikacji lub inne obiek
 int IndeksyOb[5000];                // tablica indeksow innych obiektow ulatwiajaca wyszukiwanie
 
 float fDt;                          // sredni czas pomiedzy dwoma kolejnymi cyklami symulacji i wyswietlania
-long czas_cyklu_WS,licznik_sym;     // zmienne pomocnicze potrzebne do obliczania fDt
+long czas_cyklu_WS,licznik_sym,licznik_ramek;     // zmienne pomocnicze potrzebne do obliczania fDt
+float czas_okna = 0;
+const float maks_czas_okna = 1; 
+const long maks_liczba_ramek = 5;
 float sr_czestosc;                  // srednia czestosc wysylania ramek w [ramkach/s] 
 float sum_roznic_pol=0;             // sumaryczna odleg³oœæ pomiêdzy po³o¿eniem rzeczywistym (symulowanym) a ekstrapolowanym
 float sum_roznic_kat=0;             // sumaryczna ró¿nica k¹towa -||- 
@@ -38,7 +48,7 @@ HANDLE threadReciv;                 // uchwyt w¹tku odbioru komunikatów
 extern HWND okno;       
 int SHIFTwcisniety = 0;
 bool czy_rysowac_ID = 1;            // czy rysowac nr ID przy ka¿dym obiekcie
-bool sterowanie_myszkowe = 1;       // sterowanie za pomoc¹ klawisza myszki
+bool sterowanie_myszkowe = 0;       // sterowanie za pomoc¹ klawisza myszki
 int kursor_x = 0, kursor_y = 0;     // po³o¿enie kursora myszy
 
 // Parametry widoku:
@@ -81,12 +91,12 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 
 	while(1)
 	{
-		rozmiar = pmt_net->reciv((char*)&ramka,sizeof(StanObiektu));   // oczekiwanie na nadejœcie ramki 
+		rozmiar = pmt_net->reciv((char*)&ramka,sizeof(Ramka));   // oczekiwanie na nadejœcie ramki 
 		stan = ramka.stan;
 
 		//fprintf(f,"odebrano stan iID = %d, ID dla mojego obiektu = %d\n",stan.iID,pMojObiekt->iID);
 
-		//if (stan.iID != pMojObiekt->iID)          // jeœli to nie mój w³asny obiekt
+		if (stan.iID >=0)          // jeœli to nie mój w³asny obiekt
 		{
 			if (IndeksyOb[stan.iID] == -1)        // nie ma jeszcze takiego obiektu w tablicy -> trzeba go
 				// stworzyæ
@@ -208,9 +218,18 @@ void Cykl_WS()
 
 
 	// wys³anie komunikatu o stanie obiektu przypisanego do aplikacji (pMojObiekt):    
-	if ((licznik_sym % 100 == 0) || !czy_zmn_czestosc)
+	czas_okna+=fDt;
+	if(czas_okna > maks_czas_okna)
+	{
+		czas_okna=0;
+		licznik_ramek=0;
+	}
+	if ((czestsze_ramki > maks_czestsze_ramki || licznik_sym % 100 == 0) && licznik_ramek < maks_liczba_ramek)
+	{
 		int iRozmiar = multi_send->send((char*)&ramka,sizeof(Ramka));
-
+		licznik_ramek++;
+		czestsze_ramki=0;
+	}
 	// wysy³anie komunikatu z normaln¹ czêstoœci¹ i bez opóŸnieñ:
 	//multi_send->send((char*)&ramka,sizeof(Ramka));
 
@@ -367,35 +386,54 @@ void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 				}        
 			case VK_SPACE:
 				{
-					czestsze_ramki = 1;
+					czestsze_ramki++;
 					pMojObiekt->ham = 10.0;       // stopieñ hamowania (reszta zale¿y od si³y docisku i wsp. tarcia)
 					break;                       // 1.0 to maksymalny stopieñ (np. zablokowanie kó³)
 				}
 			case VK_UP:
 				{
-					czestsze_ramki = 1;
+					czy_gora=1;
+					if(czy_dol)
+						czestsze_ramki+=maks_czestsze_ramki;
+					czestsze_ramki++;
 					pMojObiekt->F = 30.0;        // si³a pchaj¹ca do przodu
+
+					czy_dol=0;					
 					break;
 				}
 			case VK_DOWN:
 				{
-					czestsze_ramki = 1;
+					czy_dol=1;
+					if(czy_gora)
+						czestsze_ramki+=maks_czestsze_ramki;
+					czestsze_ramki++;
 					pMojObiekt->F = -5.0;
+
+					czy_gora=0;
 					break;
 				}
 			case VK_LEFT:
 				{
-					czestsze_ramki = 1;
+					czy_lewo=1;
+					if(czy_prawo)
+						czestsze_ramki+=maks_czestsze_ramki;
+					czestsze_ramki++;
 					if (SHIFTwcisniety) pMojObiekt->alfa = PI*25/180;
 					else pMojObiekt->alfa = PI*10/180;
 
+					czy_prawo=0;
 					break;
 				}
 			case VK_RIGHT:
 				{
-					czestsze_ramki = 1;
+					czy_prawo=1;
+					if(czy_lewo)
+						czestsze_ramki+=maks_czestsze_ramki;
+					czestsze_ramki++;
 					if (SHIFTwcisniety) pMojObiekt->alfa = -PI*25/180;
 					else pMojObiekt->alfa = -PI*10/180;
+
+					czy_lewo=0;
 					break;
 				}
 			case 'I':   // wypisywanie nr ID
@@ -499,7 +537,6 @@ void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 		}
 	case WM_KEYUP:
 		{
-			czestsze_ramki = 0;
 			switch (LOWORD(wParam))
 			{
 			case VK_SHIFT:
@@ -514,23 +551,27 @@ void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 				}
 			case VK_UP:
 				{
+					czestsze_ramki+=maks_czestsze_ramki;
 					pMojObiekt->F = 0.0;
-
+					printf("UP \n");
 					break;
 				}
 			case VK_DOWN:
 				{
+					czestsze_ramki+=maks_czestsze_ramki;
 					pMojObiekt->F = 0.0;
 					break;
 				}
 			case VK_LEFT:
 				{
+					czestsze_ramki+=maks_czestsze_ramki;
 					pMojObiekt->Fb = 0.00;
 					pMojObiekt->alfa = 0;	
 					break;
 				}
 			case VK_RIGHT:
 				{
+					czestsze_ramki+=maks_czestsze_ramki;
 					pMojObiekt->Fb = 0.00;
 					pMojObiekt->alfa = 0;	
 					break;
