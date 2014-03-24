@@ -60,6 +60,8 @@ enum typy_ramek {STAN_OBIEKTU, WZIECIE_PRZEDMIOTU, ODNOWIENIE_SIE_PRZEDMIOTU, KO
 
 enum typy_przekazu {GOTOWKA, PALIWO};
 
+int id_przyjaciela;
+
 struct Ramka
 {  
 	int typ_ramki;
@@ -182,35 +184,48 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 			}
 		case PROSBA_O_DOLACZENIE_KOGOKOLWIEK:
 			{
-				char text[200];
-				sprintf(text, "U¿ytkownik %d chce siê z Tob¹ zaprzyjaŸniæ.\n Akceptujesz?", ramka.nr_druzyny);
-				int decision = MessageBox(okno,text,"Nowy znajomy", MB_YESNO);
-				if (decision == IDYES)
-				{
-					Ramka ramka;
-					ramka.typ_ramki=AKCEPTACJA_DOLACZENIA_KOGOKOLWIEK;
-					ramka.nr_druzyny=pMojObiekt->iID;
-					multi_send->send((char*) &ramka, sizeof(Ramka));
+				//jestem nowy w grupie
+				if(ramka.nr_druzyny!=pMojObiekt->iID ){
+					char text[200];
+					sprintf(text, "U¿ytkownik %d chce siê z Tob¹ zaprzyjaŸniæ.\n Akceptujesz?", ramka.nr_druzyny);
+					
+					int decision = MessageBox(okno,text,"Nowy znajomy", MB_YESNO);
+					if (decision == IDYES)
+					{
+						Ramka ramka2;
+						
+						ramka2.typ_ramki=AKCEPTACJA_DOLACZENIA_KOGOKOLWIEK;
+						ramka2.iID_nadawcy=pMojObiekt->iID;
+						ramka2.iID_adresata=ramka.nr_druzyny;
+						multi_send->send((char*) &ramka2, sizeof(Ramka));
+					}
 				}
 				break;
 			}
 		case AKCEPTACJA_DOLACZENIA_KOGOKOLWIEK:
 			{
+				if(pMojObiekt->iID != ramka.iID_adresata) break;
+				//jestem liderem grupy
 				char text[200];
-				sprintf(text, "U¿ytkownik %d akceptuje Twoj¹ przyjaŸñ.\n Potwierdzasz??", ramka.nr_druzyny);
+				sprintf(text, "U¿ytkownik %d akceptuje Twoj¹ przyjaŸñ.\n Potwierdzasz??", ramka.iID_nadawcy);
 				int decision = MessageBox(okno,text,"On chce byæ z Tob¹", MB_YESNO);
 				if (decision == IDYES)
 				{
-					Ramka ramka;
-					ramka.typ_ramki=POTWIERDZENIE_ZNAJOMOSCI;
-					ramka.nr_druzyny=pMojObiekt->iID;
-					multi_send->send((char*) &ramka, sizeof(Ramka));
+					Ramka ramka2;
+					ramka2.typ_ramki=POTWIERDZENIE_ZNAJOMOSCI;
+					ramka2.nr_druzyny=pMojObiekt->iID;
+					ramka2.iID_adresata=ramka.iID_nadawcy;
+					id_przyjaciela = ramka.iID_nadawcy;
+					multi_send->send((char*) &ramka2, sizeof(Ramka));
 				}
 				break;
 			}
 		case POTWIERDZENIE_ZNAJOMOSCI:
 			{
+				if(pMojObiekt->iID != ramka.iID_adresata) break;
+				//jestem nowym w grupie
 				char text[200];
+				id_przyjaciela=ramka.nr_druzyny;
 				sprintf(text, "Ty i u¿ytkownik %d jesteœcie par¹", ramka.nr_druzyny);
 				MessageBox(okno,text,"Jesteœcie ju¿ par¹!", 0);
 				break;
