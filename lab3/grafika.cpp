@@ -53,6 +53,7 @@ int InicjujGrafike(HDC g_context)
 
 void RysujScene()
 {
+	GLfloat KolorGrupy[] = { 0.6f, 0.4f, 0.9f, 0.7f};
   GLfloat BlueSurface[] = { 0.0f, 0.0f, 0.9f, 0.7f};
   GLfloat BlueSurfaceTr[] = { 0.6f, 0.0f, 0.9f, 0.3f};
 
@@ -131,7 +132,14 @@ void RysujScene()
 
   for (int i=0;i<iLiczbaCudzychOb;i++)
   {
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, KolorCudzychObiektow);
+	  if(CudzeObiekty[i]->nr_druzyny>0)
+	  {
+			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, KolorGrupy);
+	  }
+	  else{
+			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, KolorCudzychObiektow);
+	  }
+    
     CudzeObiekty[i]->Rysuj();
   }
 

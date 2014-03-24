@@ -56,7 +56,7 @@ bool czy_umiejetnosci = 1;          // czy zró¿nicowanie umiejêtnoœci (dla ka¿de
 extern float WyslaniePrzekazu(int ID_adresata, int typ_przekazu, float wartosc_przekazu);
 
 enum typy_ramek {STAN_OBIEKTU, WZIECIE_PRZEDMIOTU, ODNOWIENIE_SIE_PRZEDMIOTU, KOLIZJA, PRZEKAZ, 
-	PROSBA_O_ZAMKNIECIE, NEGOCJACJE_HANDLOWE, PROSBA_O_DOLACZENIE_KOGOKOLWIEK, AKCEPTACJA_DOLACZENIA_KOGOKOLWIEK, POTWIERDZENIE_ZNAJOMOSCI};
+	PROSBA_O_ZAMKNIECIE, NEGOCJACJE_HANDLOWE, PROSBA_O_DOLACZENIE_KOGOKOLWIEK, AKCEPTACJA_DOLACZENIA_KOGOKOLWIEK, POTWIERDZENIE_ZNAJOMOSCI, OGLOSZENIE_SLUBU};
 
 enum typy_przekazu {GOTOWKA, PALIWO};
 
@@ -76,6 +76,8 @@ struct Ramka
 	float wartosc_przekazu; // iloœæ gotówki lub paliwa 
 	int nr_druzyny;
 	int iID_nadawcy;
+	int kolorDruzyny;
+	int nr_drugiejOsoby;
 	StanObiektu stan;
 
 };
@@ -217,6 +219,14 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 					ramka2.iID_adresata=ramka.iID_nadawcy;
 					id_przyjaciela = ramka.iID_nadawcy;
 					multi_send->send((char*) &ramka2, sizeof(Ramka));
+
+
+					Ramka ramkaSlub;
+					ramkaSlub.typ_ramki=OGLOSZENIE_SLUBU;
+					ramkaSlub.nr_druzyny=pMojObiekt->iID;
+					ramkaSlub.kolorDruzyny=(int)((float)rand()/(float)INT_MAX*0xffffff);
+					ramkaSlub.nr_drugiejOsoby=ramka.iID_nadawcy;
+					multi_send->send((char*) &ramkaSlub, sizeof(Ramka));
 				}
 				break;
 			}
@@ -228,7 +238,13 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 				id_przyjaciela=ramka.nr_druzyny;
 				sprintf(text, "Ty i u¿ytkownik %d jesteœcie par¹", ramka.nr_druzyny);
 				MessageBox(okno,text,"Jesteœcie ju¿ par¹!", 0);
+				pMojObiekt->nr_druzyny=ramka.nr_druzyny;
 				break;
+			}
+		case OGLOSZENIE_SLUBU:
+			{
+				CudzeObiekty[ramka.nr_druzyny]->nr_druzyny=ramka.nr_druzyny;
+				CudzeObiekty[ramka.nr_drugiejOsoby]->nr_druzyny=ramka.nr_druzyny;
 			}
 		} // switch po typach ramek
 	}  // while(1)

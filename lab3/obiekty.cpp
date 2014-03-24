@@ -20,7 +20,7 @@ extern int iLiczbaCudzychOb;
 extern ObiektRuchomy *CudzeObiekty[1000]; 
 
 
-ObiektRuchomy::ObiektRuchomy()             // konstruktor                   
+ObiektRuchomy::ObiektRuchomy():nr_druzyny(-1)             // konstruktor                   
 {
 
   //iID = (unsigned int)(clock() % 1000);  // identyfikator obiektu

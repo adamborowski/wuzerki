@@ -51,7 +51,8 @@ public:
 	Wektor3 wdV_kolid;        // poprawka prêdkoœci pojazdu koliduj¹cego
 	int iID_wlasc; 
 	bool czy_autonom;         // czy obiekt jest autonomiczny
-
+	GLfloat kolor;
+	int nr_druzyny;
 public:
 	ObiektRuchomy();          // konstruktor
 	~ObiektRuchomy();
