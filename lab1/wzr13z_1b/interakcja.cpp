@@ -151,6 +151,10 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 				delayTime = 0.0f;
 			} else {
 				// przejêcie kontroli nad klientem jako, ¿e lokalny agent ma mniejsze iID
+				int localAgentId = agent->iID;
+				agent->ZmienStan(stan);
+				agent->iID = localAgentId;
+
 				isAgentControlled = true;
 			}
 		} else if (stan.iID != pMojObiekt->iID && stan.iID >= 0) {        // jeœli to nie mój w³asny obiekt
