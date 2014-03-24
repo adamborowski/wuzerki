@@ -6,7 +6,7 @@ uczestnikami WZR, sterowanie wirtualnymi obiektami
 
 bool czy_opoznienia = 0;            // symulacja opóŸnieñ w sieci 
 bool czy_zmn_czestosc = 1;          // symulacja ograniczonej czêstoœci (przepustowoœci) wysy³ania ramek  
-bool czy_test_pred = 0;             // testowanie algorytmu predykcji bez udzia³u cz³owieka
+bool czy_test_pred = 1;             // testowanie algorytmu predykcji bez udzia³u cz³owieka
 float poziomWygaszania = 1;
 #include <windows.h>
 #include <time.h>
@@ -209,7 +209,7 @@ void Cykl_WS()
 
 	// wys³anie komunikatu o stanie obiektu przypisanego do aplikacji (pMojObiekt):    
 	if ((licznik_sym % 100 == 0) || !czy_zmn_czestosc)
-		int iRozmiar = multi_send->send_delayed((char*)&ramka,sizeof(Ramka));
+		int iRozmiar = multi_send->send((char*)&ramka,sizeof(Ramka));
 
 	// wysy³anie komunikatu z normaln¹ czêstoœci¹ i bez opóŸnieñ:
 	//multi_send->send((char*)&ramka,sizeof(Ramka));
