@@ -9,6 +9,7 @@ uczestnikami WZR, sterowanie wirtualnymi obiektami
 #include <stdio.h>   
 #include "interakcja.h"
 #include "obiekty.h"
+#include "globals.h"
 
 #include "siec.h"
 
@@ -76,7 +77,7 @@ struct Ramka
 	float wartosc_przekazu; // iloœæ gotówki lub paliwa 
 	int nr_druzyny;
 	int iID_nadawcy;
-	int kolorDruzyny;
+	GLfloat kolorDruzyny[4];
 	int nr_drugiejOsoby;
 	StanObiektu stan;
 
@@ -95,6 +96,8 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 	while(1)
 	{
 		rozmiar = pmt_net->reciv((char*)&ramka,sizeof(Ramka));   // oczekiwanie na nadejœcie ramki 
+		char header[200];
+		sprintf(header, "Komunikat dla u¿ytkownika %d", pMojObiekt->iID);
 		switch (ramka.typ_ramki) 
 		{
 		case STAN_OBIEKTU:           // podstawowy typ ramki informuj¹cej o stanie obiektu              
@@ -190,12 +193,12 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 				if(ramka.nr_druzyny!=pMojObiekt->iID ){
 					char text[200];
 					sprintf(text, "U¿ytkownik %d chce siê z Tob¹ zaprzyjaŸniæ.\n Akceptujesz?", ramka.nr_druzyny);
-					
-					int decision = MessageBox(okno,text,"Nowy znajomy", MB_YESNO);
+
+					int decision = MessageBox(okno,text,header, MB_YESNO);
 					if (decision == IDYES)
 					{
 						Ramka ramka2;
-						
+
 						ramka2.typ_ramki=AKCEPTACJA_DOLACZENIA_KOGOKOLWIEK;
 						ramka2.iID_nadawcy=pMojObiekt->iID;
 						ramka2.iID_adresata=ramka.nr_druzyny;
@@ -210,13 +213,15 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 				//jestem liderem grupy
 				char text[200];
 				sprintf(text, "U¿ytkownik %d akceptuje Twoj¹ przyjaŸñ.\n Potwierdzasz??", ramka.iID_nadawcy);
-				int decision = MessageBox(okno,text,"On chce byæ z Tob¹", MB_YESNO);
+				int decision = MessageBox(okno,text,header, MB_YESNO);
 				if (decision == IDYES)
 				{
 					Ramka ramka2;
+					GLfloat nowyKolor[]={rand()/(GLfloat)RAND_MAX, rand()/(GLfloat)RAND_MAX, rand()/(GLfloat)RAND_MAX, 1};
 					ramka2.typ_ramki=POTWIERDZENIE_ZNAJOMOSCI;
 					ramka2.nr_druzyny=pMojObiekt->iID;
 					ramka2.iID_adresata=ramka.iID_nadawcy;
+					copyColor(nowyKolor, ramka2.kolorDruzyny);
 					id_przyjaciela = ramka.iID_nadawcy;
 					multi_send->send((char*) &ramka2, sizeof(Ramka));
 
@@ -224,9 +229,14 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 					Ramka ramkaSlub;
 					ramkaSlub.typ_ramki=OGLOSZENIE_SLUBU;
 					ramkaSlub.nr_druzyny=pMojObiekt->iID;
-					ramkaSlub.kolorDruzyny=(int)((float)rand()/(float)INT_MAX*0xffffff);
+					copyColor(nowyKolor, ramkaSlub.kolorDruzyny);
 					ramkaSlub.nr_drugiejOsoby=ramka.iID_nadawcy;
 					multi_send->send((char*) &ramkaSlub, sizeof(Ramka));
+					//ja ju¿ wiem, ¿e mam ten kolor
+					*pMojObiekt->kolor=*nowyKolor;
+					printf("zdecydowalem sie wziac slub z: %d \n", ramka.nr_drugiejOsoby);
+					copyColor(nowyKolor, pMojObiekt->kolor);
+					copyColor(nowyKolor, objectById(id_przyjaciela)->kolor);
 				}
 				break;
 			}
@@ -237,14 +247,30 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 				char text[200];
 				id_przyjaciela=ramka.nr_druzyny;
 				sprintf(text, "Ty i u¿ytkownik %d jesteœcie par¹", ramka.nr_druzyny);
-				MessageBox(okno,text,"Jesteœcie ju¿ par¹!", 0);
+				MessageBox(okno,text,header, 0);
 				pMojObiekt->nr_druzyny=ramka.nr_druzyny;
+				copyColor(ramka.kolorDruzyny, pMojObiekt->kolor);
+				copyColor(ramka.kolorDruzyny, objectById(ramka.nr_druzyny)->kolor);
+				printf("dowiedzialem sie wlasnie, ze mam slub z moim Panem %d \n", ramka.nr_druzyny);
+
 				break;
 			}
 		case OGLOSZENIE_SLUBU:
 			{
-				CudzeObiekty[ramka.nr_druzyny]->nr_druzyny=ramka.nr_druzyny;
-				CudzeObiekty[ramka.nr_drugiejOsoby]->nr_druzyny=ramka.nr_druzyny;
+				if(ramka.nr_drugiejOsoby!=pMojObiekt->iID&& ramka.nr_druzyny!=pMojObiekt->iID)
+				{
+
+					objectById(ramka.nr_druzyny)->nr_druzyny=ramka.nr_druzyny;
+					objectById(ramka.nr_drugiejOsoby)->nr_druzyny=ramka.nr_druzyny;
+
+					copyColor(ramka.kolorDruzyny, objectById(ramka.nr_druzyny)->kolor);
+					copyColor(ramka.kolorDruzyny, objectById(ramka.nr_drugiejOsoby)->kolor);
+
+					
+					printf("dowiedzialem sie wlasnie, ze jest slub: %d i %d\n", ramka.nr_druzyny, ramka.nr_drugiejOsoby);
+				}
+				
+				//todo tu jest wyjatek bo chyba nie mam siebie w cudzych obiektach wiec zreszta po co mi ogloszenie slubu mojego wlasnego??
 			}
 		} // switch po typach ramek
 	}  // while(1)

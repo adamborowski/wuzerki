@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include "kwaternion.h"
-
+#include <gl\glu.h>
 #define PI 3.1416
+
+
 
 struct StanObiektu
 {
@@ -51,7 +53,7 @@ public:
 	Wektor3 wdV_kolid;        // poprawka prêdkoœci pojazdu koliduj¹cego
 	int iID_wlasc; 
 	bool czy_autonom;         // czy obiekt jest autonomiczny
-	GLfloat kolor;
+	GLfloat kolor[4];
 	int nr_druzyny;
 public:
 	ObiektRuchomy();          // konstruktor

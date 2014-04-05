@@ -121,7 +121,7 @@ void RysujScene()
   RysujGlobalnyUkladWsp();
 
   //glPushMatrix();
-  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, BlueSurface);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, pMojObiekt->kolor);
   glEnable(GL_BLEND);
   pMojObiekt->Rysuj();
 
@@ -132,13 +132,7 @@ void RysujScene()
 
   for (int i=0;i<iLiczbaCudzychOb;i++)
   {
-	  if(CudzeObiekty[i]->nr_druzyny>0)
-	  {
-			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, KolorGrupy);
-	  }
-	  else{
-			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, KolorCudzychObiektow);
-	  }
+	  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE,CudzeObiekty[i]->kolor);
     
     CudzeObiekty[i]->Rysuj();
   }
