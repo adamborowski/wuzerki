@@ -92,6 +92,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="globals.cpp" />
+    <ClCompile Include="glosowanie.cpp" />
     <ClCompile Include="glowny.cpp" />
     <ClCompile Include="grafika.cpp" />
     <ClCompile Include="interakcja.cpp" />
@@ -102,6 +103,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="globals.h" />
+    <ClInclude Include="glosowanie.h" />
     <ClInclude Include="grafika.h" />
     <ClInclude Include="interakcja.h" />
     <ClInclude Include="kwaternion.h" />

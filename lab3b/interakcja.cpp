@@ -10,8 +10,9 @@ uczestnikami WZR, sterowanie wirtualnymi obiektami
 #include "interakcja.h"
 #include "obiekty.h"
 #include "globals.h"
-
+#include "glosowanie.h"
 #include "siec.h"
+#include <iostream>
 
 FILE *f = fopen("plik.txt","w");    // plik do zapisu informacji testowych
 
@@ -57,7 +58,9 @@ bool czy_umiejetnosci = 1;          // czy zró¿nicowanie umiejêtnoœci (dla ka¿de
 extern float WyslaniePrzekazu(int ID_adresata, int typ_przekazu, float wartosc_przekazu);
 
 enum typy_ramek {STAN_OBIEKTU, WZIECIE_PRZEDMIOTU, ODNOWIENIE_SIE_PRZEDMIOTU, KOLIZJA, PRZEKAZ, 
-	PROSBA_O_ZAMKNIECIE, NEGOCJACJE_HANDLOWE, PROSBA_O_DOLACZENIE_KOGOKOLWIEK, AKCEPTACJA_DOLACZENIA_KOGOKOLWIEK, POTWIERDZENIE_ZNAJOMOSCI, OGLOSZENIE_SLUBU};
+	PROSBA_O_ZAMKNIECIE, NEGOCJACJE_HANDLOWE, PROSBA_O_DOLACZENIE_KOGOKOLWIEK, AKCEPTACJA_DOLACZENIA_KOGOKOLWIEK, POTWIERDZENIE_ZNAJOMOSCI, OGLOSZENIE_SLUBU,
+	DOLACZENIE_PROSBA, DOLACZENIE_GLOS, DOLACZENIE_WERDYKT
+};
 
 enum typy_przekazu {GOTOWKA, PALIWO};
 
@@ -80,9 +83,15 @@ struct Ramka
 	GLfloat kolorDruzyny[4];
 	int nr_drugiejOsoby;
 	StanObiektu stan;
+	int glosowanieDruzyna;//jaka druzyna glosuje
+	int glosowanieDecyzja;//jaka decyzja
+	bool glosowanieWerdyktPrzyjety;//ogloszenie czy przyjety
+	int glosowanieIDProszacego;
 
 };
-
+char header[200];
+Glosowanie *glosowanie;
+int rozmiarDruzyny=2;
 
 //******************************************
 // Funkcja obs³ugi w¹tku odbioru komunikatów 
@@ -96,14 +105,13 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 	while(1)
 	{
 		rozmiar = pmt_net->reciv((char*)&ramka,sizeof(Ramka));   // oczekiwanie na nadejœcie ramki 
-		char header[200];
-		sprintf(header, "Komunikat dla u¿ytkownika %d", pMojObiekt->iID);
+
 		switch (ramka.typ_ramki) 
 		{
 		case STAN_OBIEKTU:           // podstawowy typ ramki informuj¹cej o stanie obiektu              
 			{
 				stan = ramka.stan;
-				
+
 				//fprintf(f,"odebrano stan iID = %d, ID dla mojego obiektu = %d\n",stan.iID,pMojObiekt->iID);
 				int niewlasny = 1;
 				if ((stan.iID != pMojObiekt->iID))          // jeœli to nie mój w³asny obiekt
@@ -235,6 +243,7 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 					multi_send->send((char*) &ramkaSlub, sizeof(Ramka));
 					//ja ju¿ wiem, ¿e mam ten kolor
 					*pMojObiekt->kolor=*nowyKolor;
+
 					printf("zdecydowalem sie wziac slub z: %d \n", ramka.nr_drugiejOsoby);
 					copyColor(nowyKolor, pMojObiekt->kolor);
 					copyColor(nowyKolor, objectById(id_przyjaciela)->kolor);
@@ -267,12 +276,68 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 					copyColor(ramka.kolorDruzyny, objectById(ramka.nr_druzyny)->kolor);
 					copyColor(ramka.kolorDruzyny, objectById(ramka.nr_drugiejOsoby)->kolor);
 
-					
+
 					printf("dowiedzialem sie wlasnie, ze jest slub: %d i %d\n", ramka.nr_druzyny, ramka.nr_drugiejOsoby);
 				}
-				
+
 				//todo tu jest wyjatek bo chyba nie mam siebie w cudzych obiektach wiec zreszta po co mi ogloszenie slubu mojego wlasnego??
 			}
+			break;
+		case DOLACZENIE_PROSBA:
+			{
+				//musze byc w grupie ktorej dotyczy prosba
+				if(ramka.glosowanieDruzyna==pMojObiekt->nr_druzyny)
+				{
+					std::cout<<"Gracz "<<ramka.glosowanieIDProszacego<<" chce dolaczyc.\nY: glosuj TAK\nN: glosuj NIE\n";
+				}
+				if(ramka.glosowanieDruzyna==pMojObiekt->iID)
+				{
+					//jestem wlascicielem grupy, tworze glosowanie
+					glosowanie= new Glosowanie(ramka.glosowanieDruzyna, rozmiarDruzyny);
+					glosowanie->idProszacego=ramka.glosowanieIDProszacego;
+				}
+			}
+			break;
+		case DOLACZENIE_GLOS:
+			{
+				if(ramka.glosowanieDruzyna==pMojObiekt->iID)
+				{
+					int glos=ramka.glosowanieDecyzja;
+					glosowanie->dodajGlos(glos);
+					std::cout<<"dostalem glos: "<<glos<<"\n";
+					if(glosowanie->czyKoniec())
+					{
+						std::cout<<"WERDYKT: "<<(glosowanie->czyPrzyjety()?"PRZYJETY":"ODRZUCONY")<<"\n";
+						if (glosowanie->czyPrzyjety())
+						{
+							Ramka ramka;
+							ramka.typ_ramki=DOLACZENIE_WERDYKT;
+							ramka.glosowanieDruzyna=pMojObiekt->nr_druzyny;
+							ramka.glosowanieWerdyktPrzyjety=true;
+							ramka.glosowanieIDProszacego=glosowanie->idProszacego;
+							multi_send->send((char*) &ramka, sizeof(Ramka));
+						}
+					}
+				}
+			}
+			break;
+		case DOLACZENIE_WERDYKT:
+			{
+				printf("Uzytkownik %d dolacza do grupy %d", ramka.glosowanieIDProszacego, ramka.glosowanieDruzyna);
+				ObiektRuchomy* wlascicielDruzyny;
+				ObiektRuchomy* proszacy;
+				if(pMojObiekt->iID==ramka.glosowanieDruzyna)
+					wlascicielDruzyny=pMojObiekt;
+				else wlascicielDruzyny = objectById(ramka.glosowanieDruzyna);
+
+				if(pMojObiekt->iID==ramka.glosowanieIDProszacego)
+					proszacy=pMojObiekt;
+				else proszacy = objectById(ramka.glosowanieIDProszacego);
+				proszacy->nr_druzyny=ramka.glosowanieDruzyna;
+				
+				copyColor(wlascicielDruzyny->kolor, proszacy->kolor);
+			}
+			break;
 		} // switch po typach ramek
 	}  // while(1)
 	return 1;
@@ -283,10 +348,11 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 // ****    poza grafik¹   
 void PoczatekInterakcji()
 {
+
 	DWORD dwThreadId;
 
 	pMojObiekt = new ObiektRuchomy();    // tworzenie wlasnego obiektu
-
+	sprintf(header, "Komunikat dla u¿ytkownika %d", pMojObiekt->iID);
 	for (long i=0;i<1000;i++)            // inicjacja indeksow obcych obiektow
 		IndeksyOb[i] = -1;
 
@@ -301,6 +367,16 @@ void PoczatekInterakcji()
 		float srednie_opoznienie = 3*(float)rand()/RAND_MAX, wariancja_opoznienia = 2;
 		multi_send->PrepareDelay(srednie_opoznienie,wariancja_opoznienia);
 	}
+	//////////////////////////////////////////
+
+
+
+
+
+
+
+
+	/////////////////////////////////////////
 
 	// uruchomienie watku obslugujacego odbior komunikatow
 	threadReciv = CreateThread(
@@ -665,10 +741,89 @@ void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 				}
 				break;
 			case 'O':
-				Ramka ramka;
-				ramka.nr_druzyny=pMojObiekt->iID;
-				ramka.typ_ramki=PROSBA_O_DOLACZENIE_KOGOKOLWIEK;
-				multi_send->send((char*)&ramka,sizeof(Ramka));
+				{
+					Ramka ramka;
+					ramka.nr_druzyny=pMojObiekt->iID;
+					ramka.typ_ramki=PROSBA_O_DOLACZENIE_KOGOKOLWIEK;
+					multi_send->send((char*)&ramka,sizeof(Ramka));
+					break;
+				}
+			case 'X':
+				{
+
+					int idDruzyny = 101;
+					int idDolaczajacego=102;
+					if(pMojObiekt->iID == idDruzyny)
+					{
+
+						Ramka ramka2;
+						GLfloat nowyKolor[]={rand()/(GLfloat)RAND_MAX, rand()/(GLfloat)RAND_MAX, rand()/(GLfloat)RAND_MAX, 1};
+						ramka2.typ_ramki=POTWIERDZENIE_ZNAJOMOSCI;
+						ramka2.nr_druzyny=pMojObiekt->iID;
+						ramka2.iID_adresata=idDolaczajacego;
+						copyColor(nowyKolor, ramka2.kolorDruzyny);
+						id_przyjaciela = idDolaczajacego;
+						multi_send->send((char*) &ramka2, sizeof(Ramka));
+
+
+						Ramka ramkaSlub;
+						ramkaSlub.typ_ramki=OGLOSZENIE_SLUBU;
+						ramkaSlub.nr_druzyny=idDruzyny;
+						copyColor(nowyKolor, ramkaSlub.kolorDruzyny);
+						ramkaSlub.nr_drugiejOsoby=idDolaczajacego;
+						multi_send->send((char*) &ramkaSlub, sizeof(Ramka));
+						//ja ju¿ wiem, ¿e mam ten kolor
+						*pMojObiekt->kolor=*nowyKolor;
+						printf("zdecydowalem sie wziac slub z: %d \n", idDruzyny);
+						copyColor(nowyKolor, pMojObiekt->kolor);
+						copyColor(nowyKolor, objectById(id_przyjaciela)->kolor);
+
+
+					}
+				}
+				break;
+			case 'K':
+				{
+					int nrDruzyny;
+					using namespace std;
+					int ileDruzyn = iLiczbaCudzychOb;
+					for(int i=0;i<ileDruzyn;i++)
+					{
+						int idDruzyny = CudzeObiekty[i]->iID;
+						char text[200];
+						sprintf(text, "Czy chcesz do³¹czyæ do dru¿yny %d?", idDruzyny);
+						int decision = MessageBox(okno,text,header, MB_YESNO);
+						if (decision == IDYES)
+						{
+							Ramka ramka;
+							ramka.glosowanieDruzyna=idDruzyny;
+							ramka.typ_ramki=DOLACZENIE_PROSBA;
+							ramka.glosowanieIDProszacego=pMojObiekt->iID;
+							multi_send->send((char*)&ramka, sizeof(Ramka));
+							break;
+						}
+					}
+
+
+				}
+				break;
+			case 'Y':
+				{
+					Ramka ramka;
+					ramka.typ_ramki=DOLACZENIE_GLOS;
+					ramka.glosowanieDruzyna=pMojObiekt->nr_druzyny;
+					ramka.glosowanieDecyzja=1;
+					multi_send->send((char*)&ramka, sizeof(Ramka));
+				}
+				break;
+			case 'N':
+				{
+					Ramka ramka;
+					ramka.typ_ramki=DOLACZENIE_GLOS;
+					ramka.glosowanieDruzyna=pMojObiekt->nr_druzyny;
+					ramka.glosowanieDecyzja=-1;
+					multi_send->send((char*)&ramka, sizeof(Ramka));
+				}
 				break;
 			} // switch po klawiszach
 

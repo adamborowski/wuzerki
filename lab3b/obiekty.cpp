@@ -29,6 +29,7 @@ ObiektRuchomy::ObiektRuchomy():nr_druzyny(-1)             // konstruktor
 	kolor[3]=1;
 	//iID = (unsigned int)(clock() % 1000);  // identyfikator obiektu
 	iID = clientID;  // identyfikator obiektu
+	nr_druzyny=iID;
 	fprintf(f,"Nowy obiekt: iID = %d\n",iID);
 	iID_wlasc = iID;           // identyfikator w³aœciciela obiektu
 	czy_autonom = 0;
