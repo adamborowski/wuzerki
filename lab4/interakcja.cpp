@@ -324,8 +324,23 @@ void Cykl_WS()
   // --------------- MIEJSCE NA ALGORYTM STEROWANIA ---------------------
   // (dobór si³y F w granicach (-2000 N, 4000 N), k¹ta skrêtu kó³ alfa (-pi/4, pi/4) oraz
   // decyzji o hamowaniu ham w zale¿noœci od sytuacji)
-  
+  //pMojObiekt->F=4000.0;
+  float odleglosc = 10000000.0;
+  float odlegloscNowa = 0.0;
+  int index = -1;
 
+  for(int i =0; i< teren.liczba_przedmiotow; i++)
+  {
+	  if(teren.p[i].typ == MONETA)
+	  {		  
+		  odlegloscNowa = (teren.p[i].wPol - pMojObiekt->wPol + Wektor3(0,pMojObiekt->wPol.y - teren.p[i].wPol.y,0)).dlugosc();
+		  if(odleglosc > odlegloscNowa)
+		  {
+			  odleglosc = odlegloscNowa;
+			  index = i;
+		  }
+	  }
+  }
 
 
   // --------------------------------------------------------------------

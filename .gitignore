@@ -20,3 +20,8 @@
 *.filters
 *.user
 lab4/Debug/wzr_vis.vcxprojResolveAssemblyReference.cache
+lab4/plik_wzr.txt
+lab3/plik.txt
+lab3/wzr_vis.vcxproj.user
+lab3/wzr_vis.vcxproj.user
+*.user
