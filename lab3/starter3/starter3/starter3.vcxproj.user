@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerCommand>..\Debug\wzr_vis.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>33 980 50</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>103 980 50</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>
