@@ -34,6 +34,9 @@ HANDLE threadReciv;                 // uchwyt w¹tku odbioru komunikatów
 extern HWND okno;       
 int SHIFTwcisniety = 0;            
 
+#define IS_AGENT 1					// czy agent
+int agent_target = -1;				// cel agenta, indeks tablicy celów agenta / obiektów terenu
+
 
 // Parametry widoku:
 Wektor3 kierunek_kamery = Wektor3(10,-3,-11);   // kierunek patrzenia
