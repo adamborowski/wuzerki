@@ -25,3 +25,4 @@ lab3/plik.txt
 lab3/wzr_vis.vcxproj.user
 lab3/wzr_vis.vcxproj.user
 *.user
+*.cache
