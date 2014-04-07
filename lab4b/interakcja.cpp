@@ -34,7 +34,7 @@ HANDLE threadReciv;                 // uchwyt w¹tku odbioru komunikatów
 extern HWND okno;       
 int SHIFTwcisniety = 0;            
 
-#define IS_AGENT 1					// czy agent
+bool is_agent = true;				// czy agent
 int agent_target = -1;				// cel agenta, indeks tablicy celów agenta / obiektów terenu
 
 // Parametry widoku:
