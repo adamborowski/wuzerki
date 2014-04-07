@@ -31,6 +31,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
                LPSTR     lpCmdLine,
                int       nCmdShow)
 {
+	AllocConsole();
+	HWND consoleWindow=GetConsoleWindow();
+	freopen("CONOUT$", "w", stdout);
+
 	MSG meldunek;		  //innymi slowy "komunikat"
 	WNDCLASS nasza_klasa; //klasa g³ównego okna aplikacji
 
