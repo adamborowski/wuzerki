@@ -419,15 +419,10 @@ void Cykl_WS()
 				  }
 			  }
 		  }
+
 		  agent_target = index;		 
 		  printf("Index obiektu: %d, wartosc: %d\n", index, teren.p[index].wartosc);
 	  }
-
-
-		
-		//Wektor3 w_gora = pMojObiekt->qOrient.obroc_wektor(Wektor3(0,1,0)); 
-		//Wektor3 w_prawo = pMojObiekt->qOrient.obroc_wektor(Wektor3(0,0,1)); 
-
   }
 
   // --------------------------------------------------------------------
