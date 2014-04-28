@@ -26,3 +26,5 @@ lab3/wzr_vis.vcxproj.user
 lab3/wzr_vis.vcxproj.user
 *.user
 *.cache
+/lab5JADE/nbproject/private/
+/lab5JADE/build/
