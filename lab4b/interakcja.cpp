@@ -333,7 +333,75 @@ void Cykl_WS()
 
   if(is_agent)
   {
-	  if(agent_target == -1)
+	  //if (agent_target == -1)
+	  //{
+		 // for(int i =0; i< teren.liczba_przedmiotow; i++)
+		 // {
+			//  if(pMojObiekt->ilosc_paliwa < 19.0)
+			//	  typ = PALIWO;
+			//  else
+			//	  typ = MONETA;
+			//  if(teren.p[i].typ == typ && teren.p[i].do_wziecia)
+			//  {		  
+			//	  odlegloscNowa = (teren.p[i].wPol - pMojObiekt->wPol + Wektor3(0,pMojObiekt->wPol.y - teren.p[i].wPol.y,0)).dlugosc();
+			//	  if(odleglosc > odlegloscNowa)
+			//	  {
+			//		  odleglosc = odlegloscNowa;
+			//		  index = i;
+			//	  }
+			//  }
+		 // }
+		 // agent_target = index;		 
+		 // printf("Index obiektu: %d, wartosc: %d\n", index, teren.p[index].wartosc);
+
+	  //}
+
+	  if (agent_target >= 0 && teren.p[agent_target].do_wziecia)
+	  {
+
+		  Wektor3 t = teren.p[agent_target].wPol-pMojObiekt->wPol;
+		  Wektor3 w_przod = pMojObiekt->qOrient.obroc_wektor(Wektor3(1,0,0)); 
+
+		  float cos = (t^w_przod)/(t.dlugosc()*w_przod.dlugosc());
+		  float kat = acos(cos);
+		  
+		  if(cos > 0.95)
+		  {
+			  pMojObiekt->alfa = 0;
+		  }
+		  else
+		  {
+			  if(kat<PI)		  
+				  pMojObiekt->alfa = -PI/3;
+			  else
+				  pMojObiekt->alfa = +PI/3;
+		  }
+
+		  if (pMojObiekt->wV.dlugosc() < 8.0)
+			  pMojObiekt->F=1500.0;
+		  else
+			  pMojObiekt->F=0.0;
+
+		  if((teren.p[agent_target].wPol - pMojObiekt->wPol + Wektor3(0,pMojObiekt->wPol.y - teren.p[agent_target].wPol.y,0)).dlugosc() < 5.0*pMojObiekt->promien)
+		  {
+			  //printf("Predkosc: %f\n", pMojObiekt->wV.dlugosc());
+
+			  if(pMojObiekt->wV.dlugosc() > 3.0)
+				  pMojObiekt->F= -1500.0;
+
+			  podnoszenie_przedm = 1;
+		  }
+		  else
+		  {
+			  podnoszenie_przedm = 0;
+		  }
+
+		  if (licznik_sym % 50 == 0)
+		  {
+			  printf("Predkosc: %f, kat %f, cos %f\n", pMojObiekt->wV.dlugosc(), kat, cos);
+		  }
+	  }
+	  else
 	  {
 		  for(int i =0; i< teren.liczba_przedmiotow; i++)
 		  {
@@ -353,56 +421,13 @@ void Cykl_WS()
 		  }
 		  agent_target = index;		 
 		  printf("Index obiektu: %d, wartosc: %d\n", index, teren.p[index].wartosc);
-
-	  }
-	  if(agent_target >= 0)
-	  {
-		  Wektor3 t = teren.p[agent_target].wPol-pMojObiekt->wPol;
-		  Wektor3 w_przod = pMojObiekt->qOrient.obroc_wektor(Wektor3(1,0,0)); 
-
-		  float cos = (t^w_przod)/(t.dlugosc()*w_przod.dlugosc());
-		  float kat = acos(cos);
-		  
-		  if(cos > 0.95)
-		  {
-			  pMojObiekt->alfa = 0;
-		  }
-		  else
-		  {
-		  if(kat<PI)		  
-	        pMojObiekt->alfa = -PI/3;
-		  else
-	        pMojObiekt->alfa = +PI/3;
-		  }
-		  
-		  if(pMojObiekt->wV.dlugosc() < 8.0)
-			  pMojObiekt->F=1500.0;
-		  else
-			  pMojObiekt->F=0.0;
-		  if((teren.p[agent_target].wPol - pMojObiekt->wPol + Wektor3(0,pMojObiekt->wPol.y - teren.p[agent_target].wPol.y,0)).dlugosc() < 5.0*pMojObiekt->promien)
-		  {
-			  //printf("Predkosc: %f\n", pMojObiekt->wV.dlugosc());
-
-			  if(pMojObiekt->wV.dlugosc() > 3.0)
-				pMojObiekt->F= -1500.0;
-			  
-			  podnoszenie_przedm = 1;
-		  }
-		  else
-		  {
-			  podnoszenie_przedm = 0;
-		  }
-
-		   if (licznik_sym % 50 == 0)
-		   {
-			   printf("Predkosc: %f, kat %f, cos %f\n", pMojObiekt->wV.dlugosc(), kat, cos);
-		   }
 	  }
 
 
 		
 		//Wektor3 w_gora = pMojObiekt->qOrient.obroc_wektor(Wektor3(0,1,0)); 
-		//Wektor3 w_prawo = pMojObiekt->qOrient.obroc_wektor(Wektor3(0,0,1)); 
+		//Wektor3 w_prawo = pMojObiekt->qOrient.obroc_wektor(Wektor3(0,0,1)); 
+
   }
 
   // --------------------------------------------------------------------
