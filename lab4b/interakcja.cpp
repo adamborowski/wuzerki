@@ -403,6 +403,9 @@ void Cykl_WS()
 	  }
 	  else
 	  {
+		  agent_target = -1;
+		  odleglosc = 10000000.0;
+
 		  for(int i =0; i< teren.liczba_przedmiotow; i++)
 		  {
 			  if(pMojObiekt->ilosc_paliwa < 19.0)
