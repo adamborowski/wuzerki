@@ -222,7 +222,10 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 						int iRozmiar = multi_send->send_delayed((char*)&potwierdzam,sizeof(Ramka));
 
 						ile_sprzedac_paliwa = ramka.wartosc_przekazu;
+						printf("Odebralem ramke chce kupic\n");
+
 					}
+
 				}
 				break;
 			}
@@ -243,6 +246,7 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 
 					// oczekiwanie na sprzedawcê
 					czekaj = true;
+					printf("Odebralem ramke potwierdzam sprzedaz\n");
 				}
 			}
 			break;
@@ -254,6 +258,8 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 				agent_target = ramka.stan.iID;
 
 				w_trakcie_realizacji = true;
+
+				printf("Odebralem ramke potwierdzam kupno\n");
 			}
 			break;
 		}
@@ -595,7 +601,7 @@ void Cykl_WS()
 
 				for(int i =0; i< teren.liczba_przedmiotow; i++)
 				{
-					if(pMojObiekt->ilosc_paliwa < 19.0)
+					if(pMojObiekt->ilosc_paliwa < 40.0)
 						typ = PALIWO;
 					else
 						typ = MONETA;
