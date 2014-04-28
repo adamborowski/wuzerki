@@ -420,7 +420,7 @@ void Cykl_WS()
 			  }
 		  }
 		  agent_target = index;		 
-		  printf("Index obiektu: %d, wartosc: %d\n", index, teren.p[index].wartosc);
+		  printf("Index obiektu: %d, wartosc: %d, do wziêcia: %d\n", index, teren.p[index].wartosc, teren.p[index].do_wziecia);
 	  }
 
 
