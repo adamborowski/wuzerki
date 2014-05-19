@@ -34,13 +34,18 @@ HANDLE threadReciv;                 // uchwyt w¹tku odbioru komunikatów
 extern HWND okno;       
 int SHIFTwcisniety = 0;            
 
+int liczba_prob_podniesienia = 0;
+
 bool is_agent = true;				// czy agent
 int agent_target = -1;				// cel agenta, indeks tablicy celów agenta / obiektów terenu
+int deny_target = -1;				// zakazany cel
+
 
 float odleglosc = 10000000.0;
 float odlegloscNowa = 0.0;
 int index = -1;
 
+int id_sprzedawcy = -1;
 float ile_sprzedac_paliwa = 0.f;
 
 bool czy_wyslane_potwierdzenie = false;
@@ -180,17 +185,21 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 						{
 							// wys³anie gotówki
 							float ilosc_p =  0;
-							ilosc_p = WyslaniePrzekazu(ramka.stan.iID, GOTOWKA, ramka.wartosc_przekazu * za_jaka_cene_chce_kupic);
+							ilosc_p = WyslaniePrzekazu(id_sprzedawcy, GOTOWKA, ramka.wartosc_przekazu * za_jaka_cene_chce_kupic);
 
-							if (ilosc_p == 0) 
-								MessageBox(okno,"Paliwa nie da³o siê przekazaæ, bo byæ mo¿e najbli¿szy obiekt ruchomy znajduje siê zbyt daleko.",
-								"Nie da³o siê przekazaæ paliwa!",MB_OK);
+							if (ilosc_p < 1) {
+								printf("Gotowki nie da³o siê przekazaæ, bo byæ mo¿e najbli¿szy obiekt ruchomy znajduje siê zbyt daleko.");
+							}
+							else {
+								printf("przeslalem %f gotowki do obiektu nr %d\n", ilosc_p, ramka.stan.iID);
+							}
 						}
 					}
 
 					// nale¿a³oby jeszcze przelew potwierdziæ (w UDP ramki mog¹ byæ gubione!)
 					czekaj = false;
 					w_trakcie_realizacji = false;
+					czy_wyslane_potwierdzenie = false;
 				}
 				break;
 			}
@@ -230,6 +239,8 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 				// perspektywa kupca
 				if (ramka.iID_adresata == pMojObiekt->iID && !czy_wyslane_potwierdzenie)
 				{
+					id_sprzedawcy = ramka.stan.iID;
+
 					// utworzenie ramki potwierdzaj¹cej chêæ sprzeda¿y
 					Ramka potwierdzam;
 					potwierdzam.iID_adresata = ramka.stan.iID;
@@ -293,8 +304,13 @@ void PoczatekInterakcji()
 	czas_cyklu_WS = clock();             // pomiar aktualnego czasu
 
 	// obiekty sieciowe typu multicast (z podaniem adresu WZR oraz numeru portu)
+<<<<<<< HEAD
 	multi_reciv = new multicast_net("192.168.0.3",10001);      // obiekt do odbioru ramek sieciowych
 	multi_send = new multicast_net("192.168.0.2",10001);       // obiekt do wysy³ania ramek
+=======
+	multi_reciv = new multicast_net("192.168.0.2",10001);      // obiekt do odbioru ramek sieciowych
+	multi_send = new multicast_net("192.168.0.3",10001);       // obiekt do wysy³ania ramek
+>>>>>>> e4933964117e1de79bec4608caa3e10c0b81750e
 
 	if (opoznienia)
 	{
@@ -330,7 +346,7 @@ void Cykl_WS()
 		float fFps = (50*CLOCKS_PER_SEC)/(float)(czas_cyklu_WS-czas_pop);
 		if (fFps!=0) fDt=1.0/fFps; else fDt=1;
 
-		sprintf(text," %0.0f fps  %0.2fms, paliwo = %0.2f, gotowka = %d, F1-pomoc",fFps,1000.0/fFps,pMojObiekt->ilosc_paliwa,pMojObiekt->pieniadze);
+		sprintf(text,"[%d], %0.0f fps  %0.2fms, paliwo = %0.2f, gotowka = %d, F1-pomoc",pMojObiekt->iID, fFps,1000.0/fFps,pMojObiekt->ilosc_paliwa,pMojObiekt->pieniadze);
 		SetWindowText(okno,text); // wyœwietlenie aktualnej iloœci klatek/s w pasku okna			
 	}   
 
@@ -386,12 +402,15 @@ void Cykl_WS()
 					wartosc = (float)wartosc*pMojObiekt->umiejetn_zb_paliwa; 
 				pMojObiekt->ilosc_paliwa += wartosc;      
 			}
+
 			agent_target = -1;
 			odleglosc = 10000000.0;
 			teren.p[i].do_wziecia = 0;
 			teren.p[i].czy_ja_wzialem = 1;
 			teren.p[i].czas_wziecia = clock();
 			rejestracja_uczestnikow = 0;     // koniec rejestracji nowych uczestników
+			liczba_prob_podniesienia = 0;
+			deny_target = -1;
 
 			Ramka ramka;
 			ramka.typ_ramki = WZIECIE_PRZEDMIOTU; 
@@ -447,7 +466,22 @@ void Cykl_WS()
 			// perspektywa kupca
 			if (licznik_sym % 50 == 0)
 			{
-				printf("czekam");
+				printf("czekam\n");
+
+				if (!czy_wyslane_potwierdzenie) {
+					// kupiec
+					float ile = 5.f;
+					za_jaka_cene_chce_kupic = CENA_PALIWA + 5.f;
+					//czy_wyslane_potwierdzenie = false;
+
+					Ramka potwierdzam;
+					potwierdzam.typ_ramki = CHEC_KUPNA;
+					potwierdzam.cena_przekazu = za_jaka_cene_chce_kupic;
+					potwierdzam.wartosc_przekazu = ile;
+					potwierdzam.stan = pMojObiekt->Stan();
+
+					int iRozmiar = multi_send->send_delayed((char*)&potwierdzam, sizeof(Ramka));
+				}
 			}
 
 			if (pMojObiekt->wV.dlugosc() > 3.0)
@@ -461,6 +495,7 @@ void Cykl_WS()
 			else
 			{
 				pMojObiekt->F = 0;
+				pMojObiekt->wV = Wektor3(0,0,0);
 			}
 
 
@@ -540,9 +575,9 @@ void Cykl_WS()
 			else
 			{
 				if(kat<PI)		  
-					pMojObiekt->alfa = -PI/3;
+					pMojObiekt->alfa = -PI/2-.1f;
 				else
-					pMojObiekt->alfa = +PI/3;
+					pMojObiekt->alfa = +PI/2-.1f;
 			}
 
 			if (pMojObiekt->wV.dlugosc() < 8.0)
@@ -558,6 +593,12 @@ void Cykl_WS()
 					pMojObiekt->F= -1500.0;
 
 				podnoszenie_przedm = 1;
+				++liczba_prob_podniesienia;
+
+				if (liczba_prob_podniesienia > 1000) {
+					deny_target = agent_target;
+					agent_target = -1;
+				}
 			}
 			else
 			{
@@ -566,7 +607,7 @@ void Cykl_WS()
 
 			if (licznik_sym % 50 == 0)
 			{
-				printf("Predkosc: %f, kat %f, cos %f\n", pMojObiekt->wV.dlugosc(), kat, cos);
+				printf("Predkosc: %f, kat %f, cos %f, liczba prob %d\n", pMojObiekt->wV.dlugosc(), kat, cos, liczba_prob_podniesienia);
 			}
 		}
 		else
@@ -606,14 +647,14 @@ void Cykl_WS()
 
 				for(int i =0; i< teren.liczba_przedmiotow; i++)
 				{
-					if(pMojObiekt->ilosc_paliwa < 40.0)
+					if(pMojObiekt->ilosc_paliwa < 5.0)
 						typ = PALIWO;
 					else
 						typ = MONETA;
 					if(teren.p[i].typ == typ && teren.p[i].do_wziecia)
 					{		  
 						odlegloscNowa = (teren.p[i].wPol - pMojObiekt->wPol + Wektor3(0,pMojObiekt->wPol.y - teren.p[i].wPol.y,0)).dlugosc();
-						if(odleglosc > odlegloscNowa)
+						if(odleglosc > odlegloscNowa && i != deny_target)
 						{
 							odleglosc = odlegloscNowa;
 							index = i;
@@ -622,8 +663,10 @@ void Cykl_WS()
 				}
 			}
 
-			agent_target = index;		 
-			printf("Index obiektu: %d, wartosc: %d, do wziêcia: %d\n", index, teren.p[index].wartosc, teren.p[index].do_wziecia);
+			agent_target = index;
+
+			if (agent_target >= 0)
+				printf("Index obiektu: %d, wartosc: %d, do wziêcia: %d\n", index, teren.p[index].wartosc, teren.p[index].do_wziecia);
 		}
 	}
 
