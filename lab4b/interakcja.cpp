@@ -170,11 +170,7 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 					if (ramka.typ_przekazu == GOTOWKA)
 					{
 						pMojObiekt->pieniadze += ramka.wartosc_przekazu; 					
-
-						if (w_trakcie_realizacji)
-						{
-
-						}
+						printf("Dostalem pieniadze: %f", ramka.wartosc_przekazu);
 					}
 					else if (ramka.typ_przekazu == PALIWO)
 					{
@@ -209,7 +205,7 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 		case CHEC_KUPNA:
 			{
 				// perspektywa sprzedawcy
-				if (pMojObiekt->ilosc_paliwa - ramka.wartosc_przekazu > 15.f) {
+				if (pMojObiekt->ilosc_paliwa - ramka.wartosc_przekazu > 15.f && !w_trakcie_realizacji) {
 					//@todo: doliczanie dojazdu do ceny
 					if (ramka.cena_przekazu > CENA_PALIWA)
 					{
@@ -297,8 +293,8 @@ void PoczatekInterakcji()
 	czas_cyklu_WS = clock();             // pomiar aktualnego czasu
 
 	// obiekty sieciowe typu multicast (z podaniem adresu WZR oraz numeru portu)
-	multi_reciv = new multicast_net("224.12.12.138",10001);      // obiekt do odbioru ramek sieciowych
-	multi_send = new multicast_net("224.12.12.138",10001);       // obiekt do wysy³ania ramek
+	multi_reciv = new multicast_net("192.168.0.3",10001);      // obiekt do odbioru ramek sieciowych
+	multi_send = new multicast_net("192.168.0.2",10001);       // obiekt do wysy³ania ramek
 
 	if (opoznienia)
 	{
@@ -472,7 +468,8 @@ void Cykl_WS()
 		else if (w_trakcie_realizacji)
 		{
 			// perspektywa sprzedawcy
-			Wektor3 t = CudzeObiekty[agent_target]->wPol-pMojObiekt->wPol;
+			ObiektRuchomy * kupujacy = CudzeObiekty[IndeksyOb[agent_target]];
+			Wektor3 t = kupujacy->wPol-pMojObiekt->wPol;
 			Wektor3 w_przod = pMojObiekt->qOrient.obroc_wektor(Wektor3(1,0,0)); 
 
 			float cos = (t^w_przod)/(t.dlugosc()*w_przod.dlugosc());
@@ -495,7 +492,7 @@ void Cykl_WS()
 			else
 				pMojObiekt->F=0.0;
 
-			if((CudzeObiekty[agent_target]->wPol - pMojObiekt->wPol + Wektor3(0,pMojObiekt->wPol.y - CudzeObiekty[agent_target]->wPol.y,0)).dlugosc() < 10.0*pMojObiekt->promien)
+			if((kupujacy->wPol - pMojObiekt->wPol + Wektor3(0,pMojObiekt->wPol.y - kupujacy->wPol.y,0)).dlugosc() < 5.0*pMojObiekt->promien)
 			{
 				//printf("Predkosc: %f\n", pMojObiekt->wV.dlugosc());
 
@@ -507,11 +504,19 @@ void Cykl_WS()
 				}
 
 				float ilosc_p =  0;
-				ilosc_p = WyslaniePrzekazu(CudzeObiekty[agent_target]->iID, PALIWO, ile_sprzedac_paliwa);
-
-				if (ilosc_p == 0) 
-					MessageBox(okno,"Paliwa nie da³o siê przekazaæ, bo byæ mo¿e najbli¿szy obiekt ruchomy znajduje siê zbyt daleko.",
-					"Nie da³o siê przekazaæ paliwa!",MB_OK);
+				ilosc_p = WyslaniePrzekazu(kupujacy->iID, PALIWO, ile_sprzedac_paliwa);
+				
+				
+				if (ilosc_p < 1.0) 
+				{
+					printf("Paliwa nie da³o siê przekazaæ, bo byæ mo¿e najbli¿szy obiekt ruchomy znajduje siê zbyt daleko.\n");
+				}
+				else
+				{
+					printf("Wyslalem: %f\n", ile_sprzedac_paliwa);
+					w_trakcie_realizacji = false;
+					agent_target=-1;
+				}
 			}
 
 			if (licznik_sym % 50 == 0)
@@ -570,7 +575,7 @@ void Cykl_WS()
 			odleglosc = 10000000.0;
 
 			// jeœli mam za du¿o paliwo, to sprzedaj
-			if (pMojObiekt->ilosc_paliwa > 30.f) 
+			if (pMojObiekt->ilosc_paliwa > 100.f) 
 			{
 				float nasza_cena = CENA_PALIWA - 5.f;
 				czy_wyslane_potwierdzenie = false;
