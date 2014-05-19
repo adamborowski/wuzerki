@@ -302,7 +302,6 @@ public:
 };
 
 
-
 /*
    Klasa agenta kupca realizuj¹ca ten sam schemat strategii, co prosty kupiec, z t¹ ró¿nic¹, ¿e
    niektóre kluczowe parametry strategii zosta³y sparametryzowane i dziêki temu mog¹ podlegaæ adaptacji - uczeniu.
@@ -314,7 +313,10 @@ class ProstyAgentKupiecUczony: public AgentN
 public:
   float cena_sklepowa; 
 
-  float wstepna_obnizka, prop_roznicy,liczba_krokow_max;
+  float wstepna_obnizka,
+	  prop_roznicy,
+	  liczba_krokow_max;
+
   virtual void poczatek_negocjacji()
   {
     nr_kroku = 0;
@@ -451,21 +453,152 @@ public:
   }
 };
 
+/**
+ *
+ *
+ */
+class MieszanyAgentKupiec : public ProstyAgentKupiecUczony {
+public:
+	float wstepna_obnizka_2,
+		krok,
+		prob;
+
+	MieszanyAgentKupiec() {
+		prob = .7f;
+
+		wstepna_obnizka_2 = 0.8;
+		krok = 10;
+	}
+
+	virtual float akcja(float cena_moja_pop, float cena_oponenta, int nr_kroku)
+	{
+
+		// losowanie 
+		float p = (float)(rand() / RAND_MAX);
+
+		if (1 - p < prob)
+		{
+			// wykonaj now¹ strategiê
+			float cena_moja;
+			if (nr_kroku == 0)
+				cena_moja = cena_oponenta*wstepna_obnizka_2;
+			else
+			{
+				if (nr_kroku >= liczba_krokow_max)
+					cena_moja = -1;
+				else
+					cena_moja = cena_moja_pop + krok;
+			}
+
+			if (cena_moja > cena_sklepowa) cena_moja = cena_sklepowa;
+			return cena_moja;
+		}
+		else
+		{
+			// wykonaj star¹ strategiê
+			float cena = ProstyAgentKupiecUczony::akcja(cena_moja_pop, cena_oponenta, nr_kroku);
+			return cena;
+		}
+	}
+
+	void uczenie(AgentN *oponent, long liczba_epok)
+	{
+		const long liczba_osobnikow = 50;
+		const long dlugosc_ciagu = 6;
+		bool czy_komunikaty = 1;
+		int liczba_prob = 10;
+
+		AlgGenetyczny ag(liczba_osobnikow, dlugosc_ciagu);
+
+		float oceny[liczba_osobnikow];
+		float ocena_max = -1e10;
+		float ciag_max[dlugosc_ciagu];
+
+
+		if (czy_komunikaty)
+		{
+			printf("ALGORYTM GENETYCZNY\n");
+			fprintf(f, "ALGORYTM GENETYCZNY\n");
+			printf("Szukanie optymalnej strategii negocjacji kupca w stosunku do zadanej strategii sprzedawcy\n");
+			printf("liczba_epok = %d, liczba osobnikow = %d\n", liczba_epok, liczba_osobnikow);
+			fprintf(f, "Szukanie optymalnej strategii negocjacji kupca w stosunku do zadanej strategii sprzedawcy\n");
+			fprintf(f, "liczba_epok = %d, liczba osobnikow = %d\n", liczba_epok, liczba_osobnikow);
+		}
+
+
+		for (long ep = 0; ep<liczba_epok; ep++)
+		{
+			// ocena poszczegolnych rozwiazan z rozszerzonej populacji (N osobnikow pop.podst. + M potomkow)
+			for (long oso = 0; oso<liczba_osobnikow; oso++)
+			{
+				float *ciag = ag.popul_rozw[oso];
+				wstepna_obnizka = ciag[0];
+				prop_roznicy = ciag[1];
+				liczba_krokow_max = ciag[2];
+				
+				wstepna_obnizka_2 = ciag[3];
+				krok = ciag[4];
+				prob = exp(-abs(ciag[5]));
+
+				float ocena = 0;
+				for (long pr = 0; pr<liczba_prob; pr++)
+				{
+					bool czy_udane = 1;
+					float wartosc = symulacja_negocjacji(&czy_udane, oponent);
+					ocena += 1000 / (0.01 + wartosc + (czy_udane == 0)*cena_sklepowa);
+				}
+				if (ocena < 0) ocena = 0.00001;
+				oceny[oso] = ocena;
+
+				if (ocena_max < ocena)
+				{
+					ocena_max = ocena;
+					for (int i = 0; i<dlugosc_ciagu; i++) ciag_max[i] = ciag[i];
+
+					if (czy_komunikaty)
+					{
+						printf("ep = %d, Rekord, ocena = %f, dla ciagu = (%f, %f, %f, %f, %f, %f)\n",
+							ep, ocena, wstepna_obnizka, prop_roznicy, liczba_krokow_max, wstepna_obnizka_2, krok, prob);
+						fprintf(f, "ep = %d, Rekord, ocena = %f, dla ciagu = (%f, %f, %f, %f, %f, %f)\n",
+							ep, ocena, wstepna_obnizka, prop_roznicy, liczba_krokow_max, wstepna_obnizka_2, krok, prob);
+					}
+				}
+			}
+
+			ag.epoka_uczenia(oceny);
+		} // for po epokach
+
+		wstepna_obnizka = ciag_max[0];
+		prop_roznicy = ciag_max[1];
+		liczba_krokow_max = ciag_max[2];
+
+		wstepna_obnizka_2 = ciag_max[3];
+		krok = ciag_max[4];
+		prob = exp(-abs(ciag_max[5]));
+	}
+};
 
 
 void prosty_proces_negocjacji()
 {
 
-  ProstyAgentKupiecUczony kupiec;
+  //ProstyAgentKupiecUczony kupiec;
+  MieszanyAgentKupiec kupiec;
   ProstyAgentSprzedawcaUczony sprzedawca;
 
 
-  // uczenie naprzemienne:
-  //kupiec.uczenie(&sprzedawca,10000);
-  //sprzedawca.uczenie(&kupiec,10000);
+  // pkt 1.
+  //sprzedawca.uczenie(&kupiec, 1000);
+  //kupiec.uczenie(&sprzedawca, 1000);
 
+  // pkt 2.
+  /*kupiec.uczenie(&sprzedawca,1000);
+  sprzedawca.uczenie(&kupiec,1000);*/
 
-  // uczenie równoleg³e:
+  //// pkt 3.
+  sprzedawca.uczenie(&kupiec, 10000);
+
+  //// pkt 4.
   for (long i=0;i<10000;i++)
   {   
     sprzedawca.uczenie(&kupiec,1); 
