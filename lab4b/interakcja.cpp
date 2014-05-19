@@ -305,8 +305,13 @@ void PoczatekInterakcji()
 
 	// obiekty sieciowe typu multicast (z podaniem adresu WZR oraz numeru portu)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	multi_reciv = new multicast_net("192.168.0.3",10001);      // obiekt do odbioru ramek sieciowych
 	multi_send = new multicast_net("192.168.0.2",10001);       // obiekt do wysy³ania ramek
+=======
+	multi_reciv = new multicast_net("192.168.0.2",10001);      // obiekt do odbioru ramek sieciowych
+	multi_send = new multicast_net("192.168.0.3",10001);       // obiekt do wysy³ania ramek
+>>>>>>> e4933964117e1de79bec4608caa3e10c0b81750e
 =======
 	multi_reciv = new multicast_net("192.168.0.2",10001);      // obiekt do odbioru ramek sieciowych
 	multi_send = new multicast_net("192.168.0.3",10001);       // obiekt do wysy³ania ramek
