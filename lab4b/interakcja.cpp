@@ -634,18 +634,9 @@ void Cykl_WS()
 			if (licznik_sym % 50 == 0)
 			{
 				printf("Predkosc: %f, kat %f, cos %f, liczba prob %d\n", pMojObiekt->wV.dlugosc(), kat, cos, liczba_prob_podniesienia);
-			}
-		}
-		else
-		{
-			agent_target = -1;
-			index = -1;
-			odleglosc = 10000000.0;
 
-			// jeœli mam za du¿o paliwo, to sprzedaj
-			if (pMojObiekt->ilosc_paliwa > 100.f) 
-			{
-				if (licznik_sym % 50 == 0)
+				// jeœli mam za du¿o paliwo, to sprzedaj
+				if (pMojObiekt->ilosc_paliwa > 100.f)
 				{
 					float nasza_cena = CENA_PALIWA - 5.f;
 					czy_wyslane_potwierdzenie = false;
@@ -665,11 +656,20 @@ void Cykl_WS()
 					//
 					pMojObiekt->F = 0;
 
-				}
 
+				}
 			}
+		}
+		else
+		{
+			agent_target = -1;
+			index = -1;
+			odleglosc = 10000000.0;
+
+			
+
 			// jesli mam za malo paliwo, to kup
-			else if (pMojObiekt->ilosc_paliwa < 10.f)
+			if (pMojObiekt->ilosc_paliwa < 10.f)
 			{
 				// kupiec
 				float ile = 5.f;
@@ -710,7 +710,7 @@ void Cykl_WS()
 
 			agent_target = index;
 
-			if (agent_target >= 0 && teren.p[i].do_wziecia)
+			if (agent_target >= 0 && teren.p[agent_target].do_wziecia)
 				printf("Index obiektu: %d, wartosc: %d, do wziêcia: %d\n", index, teren.p[index].wartosc, teren.p[index].do_wziecia);
 		}
 	}
