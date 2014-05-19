@@ -30,7 +30,7 @@ ObiektRuchomy::ObiektRuchomy()             // konstruktor
   czy_autonom = 0;
 
   pieniadze = 1000;    // np. z³otych
-  ilosc_paliwa = 20.0;   // np. kilogramów paliwa 
+  ilosc_paliwa = 10.0;   // np. kilogramów paliwa 
 
   F = Fb = alfa  = 0;	      // si³y dzia³aj¹ce na obiekt 
   ham = 0;			      // stopieñ hamowania
