@@ -639,6 +639,7 @@ void Cykl_WS()
 		else
 		{
 			agent_target = -1;
+			index = -1;
 			odleglosc = 10000000.0;
 
 			// jeœli mam za du¿o paliwo, to sprzedaj
@@ -660,6 +661,10 @@ void Cykl_WS()
 					int iRozmiar = multi_send->send_delayed((char*)&potwierdzam, sizeof(Ramka));
 
 					printf("chce sprzedac %f paliwa za %f\n", ile_sprzedac_paliwa, nasza_cena);
+
+					//
+					pMojObiekt->F = 0;
+
 				}
 
 			}
@@ -705,7 +710,7 @@ void Cykl_WS()
 
 			agent_target = index;
 
-			if (agent_target >= 0)
+			if (agent_target >= 0 && teren.p[i].do_wziecia)
 				printf("Index obiektu: %d, wartosc: %d, do wziêcia: %d\n", index, teren.p[index].wartosc, teren.p[index].do_wziecia);
 		}
 	}
