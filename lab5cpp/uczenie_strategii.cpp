@@ -466,11 +466,11 @@ void prosty_proces_negocjacji()
 
 
   // uczenie równoleg³e:
-  /*for (long i=0;i<10000;i++)
+  for (long i=0;i<10000;i++)
   {   
     sprzedawca.uczenie(&kupiec,1); 
     kupiec.uczenie(&sprzedawca,1);
-  }*/
+  }
 
   
   
