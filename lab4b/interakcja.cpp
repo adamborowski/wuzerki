@@ -45,15 +45,18 @@ float odleglosc = 10000000.0;
 float odlegloscNowa = 0.0;
 int index = -1;
 
+// sytuacja I - kupuj¹cy chce kupiæ paliwo i czeka
 int id_sprzedawcy = -1;
 float ile_sprzedac_paliwa = 0.f;
-
 bool czy_wyslane_potwierdzenie = false;
 bool czekaj = false;
 bool w_trakcie_realizacji = false;
 
-float za_jaka_cene_chce_kupic = 0.f;
+// sytuacja II - sprzedaj¹cy chce sprzedaæ paliwo i jedzie
+bool czekaj_2 = false;
 
+//
+float za_jaka_cene_chce_kupic = 0.f;
 const float CENA_PALIWA = 10.f;
 
 // Parametry widoku:
@@ -75,7 +78,7 @@ float czas_odnowy_przedm = 90;      // czas w [s] po którym wziête przedmioty od
 bool czy_umiejetnosci = 1;          // czy zró¿nicowanie umiejêtnoœci (dla ka¿dego pojazdu losowane s¹ umiejêtnoœci
 // zbierania gotówki i paliwa)
 
-extern float WyslaniePrzekazu(int ID_adresata, int typ_przekazu, float wartosc_przekazu);
+extern float WyslaniePrzekazu(int ID_adresata, int typ_przekazu, float wartosc_przekazu, float cena_jednostkowa);
 
 enum typy_ramek {STAN_OBIEKTU, WZIECIE_PRZEDMIOTU, ODNOWIENIE_SIE_PRZEDMIOTU, KOLIZJA, PRZEKAZ, 
 	PROSBA_O_ZAMKNIECIE, NEGOCJACJE_HANDLOWE, CHEC_KUPNA, CHEC_SPRZEDAZY, POTWIERDZAM_SPRZEDAZ, POTWIERDZAM_KUPNO};
@@ -185,7 +188,7 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 						{
 							// wys³anie gotówki
 							float ilosc_p =  0;
-							ilosc_p = WyslaniePrzekazu(id_sprzedawcy, GOTOWKA, ramka.wartosc_przekazu * za_jaka_cene_chce_kupic);
+							ilosc_p = WyslaniePrzekazu(id_sprzedawcy, GOTOWKA, ramka.wartosc_przekazu * ramka.cena_przekazu, 0.f);
 
 							if (ilosc_p < 1) {
 								printf("Gotowki nie da³o siê przekazaæ, bo byæ mo¿e najbli¿szy obiekt ruchomy znajduje siê zbyt daleko.");
@@ -211,13 +214,41 @@ DWORD WINAPI WatekOdbioru(void *ptr)
 				}
 				break;
 			}
+		case CHEC_SPRZEDAZY:
+		{
+			// sytuacja II
+			// perspektywa kupca
+			if (pMojObiekt->ilosc_paliwa < 30.f && !czy_wyslane_potwierdzenie) {
+				//@todo: doliczanie dojazdu do ceny
+				if (ramka.cena_przekazu < CENA_PALIWA)
+				{
+					za_jaka_cene_chce_kupic = ramka.cena_przekazu;
+
+					Ramka potwierdzam;
+					potwierdzam.typ_ramki = CHEC_KUPNA;
+					potwierdzam.cena_przekazu = za_jaka_cene_chce_kupic;
+					potwierdzam.wartosc_przekazu = ramka.wartosc_przekazu;
+					potwierdzam.stan = pMojObiekt->Stan();
+					potwierdzam.iID_adresata = ramka.stan.iID;
+
+					int iRozmiar = multi_send->send_delayed((char*)&potwierdzam, sizeof(Ramka));
+
+					printf("Odebralem ramke chce sprzedac\n");
+				}
+
+			}
+			break;
+		}
 		case CHEC_KUPNA:
 			{
 				// perspektywa sprzedawcy
 				if (pMojObiekt->ilosc_paliwa - ramka.wartosc_przekazu > 15.f && !w_trakcie_realizacji) {
 					//@todo: doliczanie dojazdu do ceny
-					if (ramka.cena_przekazu > CENA_PALIWA)
+					printf("czy %d == %d", pMojObiekt->iID, ramka.iID_adresata);
+					if (ramka.cena_przekazu > CENA_PALIWA || pMojObiekt->iID == ramka.iID_adresata)
 					{
+						za_jaka_cene_chce_kupic = ramka.cena_przekazu;
+
 						// utworzenie ramki potwierdzaj¹cej chêæ sprzeda¿y
 						Ramka potwierdzam;
 						potwierdzam.iID_adresata = ramka.stan.iID;
@@ -304,18 +335,8 @@ void PoczatekInterakcji()
 	czas_cyklu_WS = clock();             // pomiar aktualnego czasu
 
 	// obiekty sieciowe typu multicast (z podaniem adresu WZR oraz numeru portu)
-<<<<<<< HEAD
-<<<<<<< HEAD
-	multi_reciv = new multicast_net("192.168.0.3",10001);      // obiekt do odbioru ramek sieciowych
-	multi_send = new multicast_net("192.168.0.2",10001);       // obiekt do wysy³ania ramek
-=======
 	multi_reciv = new multicast_net("192.168.0.2",10001);      // obiekt do odbioru ramek sieciowych
 	multi_send = new multicast_net("192.168.0.3",10001);       // obiekt do wysy³ania ramek
->>>>>>> e4933964117e1de79bec4608caa3e10c0b81750e
-=======
-	multi_reciv = new multicast_net("192.168.0.2",10001);      // obiekt do odbioru ramek sieciowych
-	multi_send = new multicast_net("192.168.0.3",10001);       // obiekt do wysy³ania ramek
->>>>>>> e4933964117e1de79bec4608caa3e10c0b81750e
 
 	if (opoznienia)
 	{
@@ -544,7 +565,7 @@ void Cykl_WS()
 				}
 
 				float ilosc_p =  0;
-				ilosc_p = WyslaniePrzekazu(kupujacy->iID, PALIWO, ile_sprzedac_paliwa);
+				ilosc_p = WyslaniePrzekazu(kupujacy->iID, PALIWO, ile_sprzedac_paliwa, za_jaka_cene_chce_kupic);
 				
 				
 				if (ilosc_p < 1.0) 
@@ -623,10 +644,24 @@ void Cykl_WS()
 			// jeœli mam za du¿o paliwo, to sprzedaj
 			if (pMojObiekt->ilosc_paliwa > 100.f) 
 			{
-				float nasza_cena = CENA_PALIWA - 5.f;
-				czy_wyslane_potwierdzenie = false;
+				if (licznik_sym % 50 == 0)
+				{
+					float nasza_cena = CENA_PALIWA - 5.f;
+					czy_wyslane_potwierdzenie = false;
 
-				//@todo
+					ile_sprzedac_paliwa = 10.f;
+
+					Ramka potwierdzam;
+					potwierdzam.typ_ramki = CHEC_SPRZEDAZY;
+					potwierdzam.cena_przekazu = nasza_cena;
+					potwierdzam.wartosc_przekazu = ile_sprzedac_paliwa;
+					potwierdzam.stan = pMojObiekt->Stan();
+
+					int iRozmiar = multi_send->send_delayed((char*)&potwierdzam, sizeof(Ramka));
+
+					printf("chce sprzedac %f paliwa za %f\n", ile_sprzedac_paliwa, nasza_cena);
+				}
+
 			}
 			// jesli mam za malo paliwo, to kup
 			else if (pMojObiekt->ilosc_paliwa < 10.f)
@@ -698,13 +733,14 @@ void ZakonczenieInterakcji()
 }
 
 // Funkcja wysylajaca ramke z przekazem, zwraca zrealizowan¹ wartoœæ przekazu
-float WyslaniePrzekazu(int ID_adresata, int typ_przekazu, float wartosc_przekazu)
+float WyslaniePrzekazu(int ID_adresata, int typ_przekazu, float wartosc_przekazu, float cena_jednostkowa)
 {
 	Ramka ramka;
 	ramka.typ_ramki = PRZEKAZ;
 	ramka.iID_adresata = ID_adresata;
 	ramka.typ_przekazu = typ_przekazu;
 	ramka.wartosc_przekazu = wartosc_przekazu;
+	ramka.cena_przekazu = cena_jednostkowa;
 
 	// tutaj nale¿a³oby uzyskaæ potwierdzenie przekazu zanim sumy zostan¹ odjête
 	if (typ_przekazu == GOTOWKA)
@@ -907,7 +943,7 @@ void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 
 					float ilosc_p =  0;
 					if (indeks_min > -1)
-						ilosc_p = WyslaniePrzekazu(CudzeObiekty[indeks_min]->iID, PALIWO, 10);
+						ilosc_p = WyslaniePrzekazu(CudzeObiekty[indeks_min]->iID, PALIWO, 10, 0.f);
 
 					if (ilosc_p == 0) 
 						MessageBox(okno,"Paliwa nie da³o siê przekazaæ, bo byæ mo¿e najbli¿szy obiekt ruchomy znajduje siê zbyt daleko.",
@@ -929,7 +965,7 @@ void KlawiszologiaSterowania(UINT kod_meldunku, WPARAM wParam, LPARAM lParam)
 
 					float ilosc_p =  0;
 					if (indeks_min > -1)
-						ilosc_p = WyslaniePrzekazu(CudzeObiekty[indeks_min]->iID, GOTOWKA, 100);
+						ilosc_p = WyslaniePrzekazu(CudzeObiekty[indeks_min]->iID, GOTOWKA, 100, 0.f);
 
 					if (ilosc_p == 0) 
 						MessageBox(okno,"Gotówki nie da³o siê przekazaæ, bo byæ mo¿e najbli¿szy obiekt ruchomy znajduje siê zbyt daleko.",
