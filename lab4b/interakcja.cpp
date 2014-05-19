@@ -75,7 +75,7 @@ bool podnoszenie_przedm = 0;        // czy mozna podnosic przedmioty
 bool rejestracja_uczestnikow = 1;   // rejestracja trwa do momentu wziêcia przedmiotu przez któregokolwiek uczestnika,
 // w przeciwnym razie trzeba by przesy³aæ ca³y stan œrodowiska nowicjuszowi
 float czas_odnowy_przedm = 90;      // czas w [s] po którym wziête przedmioty odnawiaj¹ siê
-bool czy_umiejetnosci = 1;          // czy zró¿nicowanie umiejêtnoœci (dla ka¿dego pojazdu losowane s¹ umiejêtnoœci
+bool czy_umiejetnosci = 0;          // czy zró¿nicowanie umiejêtnoœci (dla ka¿dego pojazdu losowane s¹ umiejêtnoœci
 // zbierania gotówki i paliwa)
 
 extern float WyslaniePrzekazu(int ID_adresata, int typ_przekazu, float wartosc_przekazu, float cena_jednostkowa);
@@ -335,8 +335,8 @@ void PoczatekInterakcji()
 	czas_cyklu_WS = clock();             // pomiar aktualnego czasu
 
 	// obiekty sieciowe typu multicast (z podaniem adresu WZR oraz numeru portu)
-	multi_reciv = new multicast_net("192.168.0.2",10001);      // obiekt do odbioru ramek sieciowych
-	multi_send = new multicast_net("192.168.0.3",10001);       // obiekt do wysy³ania ramek
+	multi_reciv = new multicast_net("192.168.0.3",10001);      // obiekt do odbioru ramek sieciowych
+	multi_send = new multicast_net("192.168.0.2",10001);       // obiekt do wysy³ania ramek
 
 	if (opoznienia)
 	{
@@ -692,7 +692,7 @@ void Cykl_WS()
 
 				for(int i =0; i< teren.liczba_przedmiotow; i++)
 				{
-					if(pMojObiekt->ilosc_paliwa < 5.0)
+					if(pMojObiekt->ilosc_paliwa < 150.0)
 						typ = PALIWO;
 					else
 						typ = MONETA;
